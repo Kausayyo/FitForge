@@ -1,0 +1,30 @@
+{
+  "appId": "com.fitforge.app",
+  "appName": "FitForge",
+  "webDir": "www",
+  "backgroundColor": "#0a0a0f",
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "scheme": "FitForge"
+  },
+  "android": {
+    "backgroundColor": "#0a0a0f",
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#0a0a0f",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0a0a0f"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}
