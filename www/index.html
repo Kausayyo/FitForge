@@ -18,6 +18,7 @@
     --bg:#0c0c0f;--surface:#13131a;--card:#18181f;--card2:#1d1d27;
     --border:#2a2a38;--border2:#353548;--text:#e8e8f0;--muted:#6a6a7a;--muted2:#8a8a9a;
     --push:#e85c3a;--pull:#f5a623;--legs:#4ecdc4;--full:#a78bfa;
+    --yoga:#a78bfa;--home:#4ecdc4;--pranayama:#f5a623;--calisthenics:#e85c3a;
     --green:#34d399;--gold:#fbbf24;--red:#ef4444;--razorpay:#3395ff;
     --cycle-men:#ef4444;--cycle-fol:#34d399;--cycle-ov:#f5a623;--cycle-lut:#a78bfa;
     --cycle-pink:#f472b6;
@@ -134,9 +135,13 @@
   .tab.active.pull{color:var(--pull);border-bottom-color:var(--pull)}
   .tab.active.legs{color:var(--legs);border-bottom-color:var(--legs)}
   .tab.active.full{color:var(--full);border-bottom-color:var(--full)}
+  .tab.active.yoga{color:var(--yoga);border-bottom-color:var(--yoga)}
+  .tab.active.home{color:var(--home);border-bottom-color:var(--home)}
+  .tab.active.pranayama{color:var(--pranayama);border-bottom-color:var(--pranayama)}
+  .tab.active.calisthenics{color:var(--calisthenics);border-bottom-color:var(--calisthenics)}
   /* EXERCISE CARDS */
   .ex-card{background:var(--card);border-radius:14px;margin-bottom:14px;overflow:hidden;border-top:3px solid var(--push);position:relative}
-  .ex-card.push{border-top-color:var(--push)}.ex-card.pull{border-top-color:var(--pull)}.ex-card.legs{border-top-color:var(--legs)}.ex-card.full{border-top-color:var(--full)}
+  .ex-card.push{border-top-color:var(--push)}.ex-card.pull{border-top-color:var(--pull)}.ex-card.legs{border-top-color:var(--legs)}.ex-card.full{border-top-color:var(--full)}.ex-card.yoga{border-top-color:var(--yoga)}.ex-card.home{border-top-color:var(--home)}.ex-card.pranayama{border-top-color:var(--pranayama)}.ex-card.calisthenics{border-top-color:var(--calisthenics)}
   .ex-visual{height:160px;position:relative;overflow:hidden;background:var(--card2);display:flex;align-items:center;justify-content:center}
   .ex-visual svg{width:100%;height:100%}
   .lock-overlay{position:absolute;inset:0;background:rgba(13,13,18,.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:2;cursor:pointer}
@@ -147,7 +152,7 @@
   .ex-num{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px}
   .ex-name{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
   .ex-sets{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--push);margin-bottom:10px;font-weight:500}
-  .ex-card.pull .ex-sets{color:var(--pull)}.ex-card.legs .ex-sets{color:var(--legs)}.ex-card.full .ex-sets{color:var(--full)}
+  .ex-card.pull .ex-sets{color:var(--pull)}.ex-card.legs .ex-sets{color:var(--legs)}.ex-card.full .ex-sets{color:var(--full)}.ex-card.yoga .ex-sets{color:var(--yoga)}.ex-card.home .ex-sets{color:var(--home)}.ex-card.pranayama .ex-sets{color:var(--pranayama)}.ex-card.calisthenics .ex-sets{color:var(--calisthenics)}
   .ex-tip{font-size:12px;color:var(--muted2);line-height:1.55;border-left:2px solid var(--border);padding-left:10px;margin-bottom:10px}
   .ex-muscles{display:flex;flex-wrap:wrap;gap:5px}
   .muscle-pill{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;background:rgba(232,92,58,.1);color:var(--push)}
@@ -155,6 +160,10 @@
   .ex-card.pull .muscle-pill:not(.sec){background:rgba(245,166,35,.1);color:var(--pull)}
   .ex-card.legs .muscle-pill:not(.sec){background:rgba(78,205,196,.1);color:var(--legs)}
   .ex-card.full .muscle-pill:not(.sec){background:rgba(167,139,250,.1);color:var(--full)}
+  .ex-card.yoga .muscle-pill:not(.sec){background:rgba(167,139,250,.1);color:var(--yoga)}
+  .ex-card.home .muscle-pill:not(.sec){background:rgba(78,205,196,.1);color:var(--home)}
+  .ex-card.pranayama .muscle-pill:not(.sec){background:rgba(245,166,35,.1);color:var(--pranayama)}
+  .ex-card.calisthenics .muscle-pill:not(.sec){background:rgba(232,92,58,.1);color:var(--calisthenics)}
   /* DIET */
   .macros{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
   .macro-cell{background:var(--card);border-radius:12px;padding:16px 10px;text-align:center;border-top:3px solid var(--border)}
@@ -302,8 +311,8 @@
   .stat-block .l{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-top:4px;letter-spacing:1px;text-transform:uppercase}
   /* BOTTOM NAV */
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:grid;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:50;backdrop-filter:blur(10px)}
-  .bottom-nav.male{grid-template-columns:repeat(6,1fr)}
-  .bottom-nav.female{grid-template-columns:repeat(7,1fr)}
+  .bottom-nav.male{grid-template-columns:repeat(7,1fr)}
+  .bottom-nav.female{grid-template-columns:repeat(8,1fr)}
   .nav-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.5px;text-transform:uppercase}
   .nav-btn.active{color:var(--push)}
   .nav-btn.active.pink-nav{color:var(--cycle-pink)}
@@ -475,7 +484,7 @@ const LOGO_MARK_LG=`<svg width="64" height="64" viewBox="0 0 200 200" xmlns="htt
 </svg>`;
 
 const State = {
-  currentUser:null,currentPage:'landing',currentTab:null,
+  currentUser:null,currentPage:'landing',currentTab:null,communityPosts:null,
   onboardingStep:0,onboardingData:{},toast:null,modal:null,promoApplied:false,
   workoutSession:null,currentTrainerId:null,chatMessages:[],
   scanPhase:'intro',scanImages:[],scanResults:null,scanTab:0,scanDayIdx:0,
@@ -520,11 +529,29 @@ function getExerciseGifs(){try{return JSON.parse(localStorage.getItem('ff_ex_gif
 function setExerciseGif(name,url){try{const v=getExerciseGifs();v[name]=url;localStorage.setItem('ff_ex_gifs',JSON.stringify(v))}catch(e){}}
 function canScan(){
   if(State.currentUser?.isPremium)return true;
-  const last=localStorage.getItem('ff_last_scan');
-  if(!last)return true;
-  return(Date.now()-parseInt(last,10))/(864e5)>=30;
+  try{
+    const scans=JSON.parse(localStorage.getItem('ff_scan_dates')||'[]');
+    const now=new Date();
+    const thisMonth=scans.filter(d=>{const sd=new Date(d);return sd.getMonth()===now.getMonth()&&sd.getFullYear()===now.getFullYear();});
+    return thisMonth.length<3;
+  }catch(e){return true;}
 }
-function markScanned(){try{localStorage.setItem('ff_last_scan',Date.now().toString())}catch(e){}}
+function getScansRemaining(){
+  if(State.currentUser?.isPremium)return '∞';
+  try{
+    const scans=JSON.parse(localStorage.getItem('ff_scan_dates')||'[]');
+    const now=new Date();
+    const thisMonth=scans.filter(d=>{const sd=new Date(d);return sd.getMonth()===now.getMonth()&&sd.getFullYear()===now.getFullYear();});
+    return Math.max(0,3-thisMonth.length);
+  }catch(e){return 3;}
+}
+function markScanned(){
+  try{
+    const scans=JSON.parse(localStorage.getItem('ff_scan_dates')||'[]');
+    scans.push(new Date().toISOString());
+    localStorage.setItem('ff_scan_dates',JSON.stringify(scans));
+  }catch(e){}
+}
 async function apiCall(method,path,body){
   const token=getJwt();
   try{
@@ -1021,6 +1048,54 @@ const EXERCISES = {
       {name:'Ab Circuit',sets:'3 rounds: Plank 45s + Leg Raises ×15 + Crunches ×20',tip:'No rest between exercises within round. 30 seconds between rounds. Build the core that shows at 10% BF.',muscles:['Abs','Obliques','Core'],svg:'plank'},
       {name:'30-min Incline Treadmill Walk',sets:'10-12% incline · 5-6 km/h',tip:'Burns 200-250 kcal extra. Low impact — does not hurt recovery. Always do AFTER lifting, never before.',muscles:['Cardio','Fat Burn'],svg:'walk'}
     ]
+  },
+  yoga:{
+    free:[
+      {name:'Surya Namaskar A',sets:'5 rounds · 12 poses each',tip:'Flow through all 12 poses smoothly. Inhale on extensions, exhale on folds. Start slow, build pace.',muscles:['Full Body','Flexibility','Core'],svg:'plank'},
+      {name:'Warrior I (Virabhadrasana I)',sets:'Hold 30s each side · 3 sets',tip:'Back foot at 45°, front knee over ankle. Arms overhead, gaze up. Square your hips forward.',muscles:['Quads','Hip Flexors','Shoulders'],svg:'lunge'},
+      {name:'Downward Dog (Adho Mukha)',sets:'Hold 45-60s · 4 sets',tip:'Hands shoulder-width, feet hip-width. Push hips up and back. Heels reach toward floor. Straight spine priority.',muscles:['Hamstrings','Shoulders','Calves'],svg:'plank'}
+    ],
+    premium:[
+      {name:'Tree Pose (Vrikshasana)',sets:'Hold 30s each side · 3 sets',tip:'Foot on inner thigh (never on knee). Fix gaze on one point. Engage core for balance.',muscles:['Balance','Core','Ankles'],svg:'calfraise'},
+      {name:'Cobra Pose (Bhujangasana)',sets:'Hold 20s · 5 sets',tip:'Hands under shoulders, press up gently. Keep hips on floor. Shoulders down away from ears.',muscles:['Lower Back','Chest','Abs'],svg:'plank'},
+      {name:'Pigeon Pose (Kapotasana)',sets:'Hold 45s each side · 3 sets',tip:'Front shin parallel to mat edge. Square hips. Fold forward for deeper stretch. Breathe into tight spots.',muscles:['Hip Flexors','Glutes','Piriformis'],svg:'lunge'}
+    ]
+  },
+  home:{
+    free:[
+      {name:'Push-Ups',sets:'4 sets × max reps · Rest 60s',tip:'Hands shoulder-width, body straight line. Lower until chest nearly touches floor. Full lockout at top.',muscles:['Chest','Triceps','Core'],svg:'bench'},
+      {name:'Bodyweight Squats',sets:'4 sets × 20 reps · Rest 45s',tip:'Feet shoulder-width, toes slightly out. Sit back and down to parallel. Drive through heels.',muscles:['Quads','Glutes','Core'],svg:'squat'},
+      {name:'Plank Hold',sets:'4 sets × 45-60s · Rest 30s',tip:'Forearms on ground, body straight line from head to heels. Squeeze glutes, brace core. No sagging.',muscles:['Core','Shoulders','Glutes'],svg:'plank'}
+    ],
+    premium:[
+      {name:'Diamond Push-Ups',sets:'3 sets × 12-15 reps · Rest 60s',tip:'Hands together forming diamond shape under chest. Elbows stay close to body. Tricep destroyer.',muscles:['Triceps','Chest','Core'],svg:'cgbench'},
+      {name:'Jump Squats',sets:'3 sets × 15 reps · Rest 60s',tip:'Squat down, explode up. Land softly on balls of feet. Immediate descent into next rep.',muscles:['Quads','Glutes','Calves'],svg:'squat'},
+      {name:'Burpees',sets:'3 sets × 10 reps · Rest 90s',tip:'Drop to push-up, chest touches floor, push up, jump feet to hands, explode up with hands overhead.',muscles:['Full Body','Cardio'],svg:'plank'}
+    ]
+  },
+  pranayama:{
+    free:[
+      {name:'Anulom Vilom (Alternate Nostril)',sets:'5 min · 10-15 cycles',tip:'Close right nostril with thumb, inhale left. Close left with ring finger, exhale right. Alternate. Calms nervous system.',muscles:['Breathing','Stress Relief','Focus'],svg:'plank'},
+      {name:'Kapalbhati (Skull Shining)',sets:'3 rounds × 30 breaths · Rest 60s',tip:'Short, forceful exhales through nose. Belly snaps in on each exhale. Passive inhale. Empty stomach only.',muscles:['Core','Digestion','Energy'],svg:'plank'},
+      {name:'Bhastrika (Bellows Breath)',sets:'3 rounds × 20 breaths · Rest 45s',tip:'Equal forceful inhales and exhales through nose. Arms pump up on inhale, down on exhale. Energizing.',muscles:['Lungs','Energy','Circulation'],svg:'plank'}
+    ],
+    premium:[
+      {name:'Box Breathing (Sama Vritti)',sets:'5 min · Inhale 4s, Hold 4s, Exhale 4s, Hold 4s',tip:'Used by Navy SEALs. Equal count inhale-hold-exhale-hold. Regulates autonomic nervous system.',muscles:['Calm','Focus','Recovery'],svg:'plank'},
+      {name:'Bhramari (Bee Breath)',sets:'5 rounds · Hold each 15-20s',tip:'Close ears with thumbs, fingers on face. Inhale deeply, exhale with humming sound. Reduces anxiety instantly.',muscles:['Stress Relief','Sleep','Calm'],svg:'plank'},
+      {name:'Ujjayi (Ocean Breath)',sets:'10 min continuous',tip:'Slight constriction in throat. Audible breath like ocean waves. Use during yoga or meditation. Builds heat.',muscles:['Endurance','Focus','Heat'],svg:'plank'}
+    ]
+  },
+  calisthenics:{
+    free:[
+      {name:'Dips (Chair/Parallel Bar)',sets:'4 sets × 10-12 reps · Rest 90s',tip:'Lean slightly forward for chest, stay upright for triceps. Lower until upper arms parallel. Full lockout.',muscles:['Chest','Triceps','Shoulders'],svg:'pushdown'},
+      {name:'Chin-Ups',sets:'4 sets × max reps · Rest 90s',tip:'Underhand grip, shoulder-width. Pull until chin clears bar. Slow negative (3 seconds down).',muscles:['Biceps','Lats','Core'],svg:'pullup'},
+      {name:'Pistol Squat (Assisted)',sets:'3 sets × 5 each leg · Rest 90s',tip:'Hold door frame or pole for balance. Single leg squat to full depth. Other leg extended forward.',muscles:['Quads','Glutes','Balance'],svg:'squat'}
+    ],
+    premium:[
+      {name:'Muscle-Up (Progression)',sets:'5 sets × 3-5 reps · Rest 2 min',tip:'Start with explosive pull-ups. When chin is well over bar, push down and transition. The holy grail of calisthenics.',muscles:['Lats','Chest','Triceps'],svg:'pullup'},
+      {name:'L-Sit Hold',sets:'4 sets × 15-20s · Rest 60s',tip:'On parallel bars or floor. Legs straight in front, parallel to ground. Core and hip flexors on fire.',muscles:['Core','Hip Flexors','Triceps'],svg:'plank'},
+      {name:'Handstand Push-Up (Wall)',sets:'3 sets × 5-8 reps · Rest 2 min',tip:'Kick up to wall handstand. Lower head toward floor. Press back up. Ultimate shoulder strength builder.',muscles:['Shoulders','Triceps','Core'],svg:'ohp'}
+    ]
   }
 };
 
@@ -1048,7 +1123,25 @@ const EXERCISE_SEARCH_MAP = {
   'Dumbbell Bench Press': 'dumbbell bench press',
   'Goblet Squat': 'dumbbell goblet squat',
   'Ab Circuit': 'crunch',
-  '30-min Incline Treadmill Walk': 'treadmill walk'
+  '30-min Incline Treadmill Walk': 'treadmill walk',
+  'Surya Namaskar A': 'sun salutation',
+  'Warrior I (Virabhadrasana I)': 'warrior pose',
+  'Downward Dog (Adho Mukha)': 'downward dog',
+  'Tree Pose (Vrikshasana)': 'tree pose',
+  'Cobra Pose (Bhujangasana)': 'cobra pose',
+  'Pigeon Pose (Kapotasana)': 'pigeon pose',
+  'Push-Ups': 'push up',
+  'Bodyweight Squats': 'bodyweight squat',
+  'Plank Hold': 'plank',
+  'Diamond Push-Ups': 'diamond push up',
+  'Jump Squats': 'jump squat',
+  'Burpees': 'burpee',
+  'Dips (Chair/Parallel Bar)': 'dip',
+  'Chin-Ups': 'chin up',
+  'Pistol Squat (Assisted)': 'pistol squat',
+  'Muscle-Up (Progression)': 'muscle up',
+  'L-Sit Hold': 'l sit',
+  'Handstand Push-Up (Wall)': 'handstand push up'
 };
 async function fetchExerciseGifs(){
   const key=getWorkoutXKey();
@@ -1903,7 +1996,7 @@ function showToast(msg,type='success'){State.toast={msg,type};render();setTimeou
 function render(){
   const app=document.getElementById('app');
   const u=State.currentUser;
-  const navPages=['home','workouts','diet','grocery','progress','cycle','profile','trainers','workout-history','ai-chat'];
+  const navPages=['home','workouts','diet','grocery','progress','cycle','profile','trainers','workout-history','ai-chat','community'];
   const showNav=u&&u.onboarded&&navPages.includes(State.currentPage);
   document.body.classList.toggle('no-nav',!showNav);
   let html='';
@@ -1929,6 +2022,7 @@ function render(){
     case 'gym-scanner':html=renderGymScanner();break;
     case 'gym-scan-results':html=renderGymScanResults();break;
     case 'partner':html=renderPartner();break;
+    case 'community':html=renderCommunity();break;
     default:html=renderLanding();
   }
   if(showNav)html+=renderBottomNav();
@@ -2202,8 +2296,8 @@ function renderHome(){
 
 function renderWorkouts(){
   const tab=State.currentTab||'push';
-  const dayTitles={push:'PUSH DAY',pull:'PULL DAY',legs:'LEG DAY',full:'FULL BODY'};
-  const muscles={push:'Chest · Shoulders · Triceps',pull:'Back · Biceps · Rear Delts',legs:'Quads · Hamstrings · Glutes · Calves',full:'Compound Focus · Everything'};
+  const dayTitles={push:'PUSH DAY',pull:'PULL DAY',legs:'LEG DAY',full:'FULL BODY',yoga:'YOGA',home:'HOME WORKOUT',pranayama:'PRANAYAMA',calisthenics:'CALISTHENICS'};
+  const muscles={push:'Chest · Shoulders · Triceps',pull:'Back · Biceps · Rear Delts',legs:'Quads · Hamstrings · Glutes · Calves',full:'Compound Focus · Everything',yoga:'Flexibility · Balance · Mind-Body',home:'No Equipment · Bodyweight',pranayama:'Breathing · Recovery · Focus',calisthenics:'Bodyweight Strength · Skills'};
   const u=State.currentUser;
   const free=EXERCISES[tab].free;
   const premium=EXERCISES[tab].premium;
@@ -2252,6 +2346,10 @@ function renderWorkouts(){
       <button class="tab ${tab==='pull'?'active pull':''}" onclick="goto('workouts','pull')">Pull</button>
       <button class="tab ${tab==='legs'?'active legs':''}" onclick="goto('workouts','legs')">Legs</button>
       <button class="tab ${tab==='full'?'active full':''}" onclick="goto('workouts','full')">Full Body</button>
+      <button class="tab ${tab==='home'?'active home':''}" onclick="goto('workouts','home')">Home</button>
+      <button class="tab ${tab==='yoga'?'active yoga':''}" onclick="goto('workouts','yoga')">Yoga</button>
+      <button class="tab ${tab==='pranayama'?'active pranayama':''}" onclick="goto('workouts','pranayama')">Pranayama</button>
+      <button class="tab ${tab==='calisthenics'?'active calisthenics':''}" onclick="goto('workouts','calisthenics')">Calisthenics</button>
     </div>
     ${needsGifSetup?`<div style="background:rgba(78,205,196,.06);border:1px solid rgba(78,205,196,.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openWorkoutXSettings()">
   <div style="font-size:20px">🎬</div>
@@ -2796,6 +2894,66 @@ function renderPremium(){
 
 function renderSuccess(){return`<div class="page fade-in"><div class="success-screen"><div class="success-icon">✓</div><h1 class="display" style="font-size:36px;color:var(--gold);margin-bottom:12px">WELCOME TO<br>PREMIUM!</h1><p style="color:var(--muted2);margin-bottom:24px">All features unlocked. Time to crush your goals.</p><button class="btn btn-primary btn-full" onclick="goto('home')">Go to Home</button></div></div>`}
 
+const DEFAULT_COMMUNITY_POSTS = [
+  {user:'FitForge Team',text:'Welcome to the FitForge community! Share your progress, ask questions, and motivate each other. Let\'s forge together. \u{1F4AA}',time:Date.now()-86400000*2,likes:12},
+  {user:'Rajesh K.',text:'Just hit 100kg squat for the first time! 6 months of PPL split and eating right. This app changed my training.',time:Date.now()-86400000,likes:8,workout:{type:'legs',duration:'52 min'}},
+  {user:'Priya S.',text:'Follicular phase + heavy deadlifts = PR day. Pulled 70kg! The cycle tracking is genuinely useful.',time:Date.now()-43200000,likes:15,workout:{type:'pull',duration:'48 min'}},
+  {user:'Arjun M.',text:'Pro tip: roasted chana as office snack is a game changer. 17g protein per 100g, costs ₹80/week. Better than any protein bar.',time:Date.now()-7200000,likes:6},
+  {user:'Kavya N.',text:'Day 30 streak! Never thought I\'d stick with anything this long. The streak tracker is addictive \u{1F525}',time:Date.now()-3600000,likes:10}
+];
+function getTimeAgo(ts){
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<60)return 'just now';
+  if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+function renderCommunity(){
+  const u=State.currentUser;
+  const posts=[...(State.communityPosts||[]),...DEFAULT_COMMUNITY_POSTS].sort((a,b)=>b.time-a.time);
+  const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)',yoga:'var(--full)',home:'var(--legs)',pranayama:'var(--pull)',calisthenics:'var(--push)'};
+  return`<div class="page fade-in">
+    <h1 class="display page-title">COMMUNITY</h1>
+    <p class="page-sub">Motivation & tips from the FitForge crew</p>
+    <button class="btn btn-primary btn-full" style="margin-bottom:20px" onclick="openPostModal()">+ Share Update</button>
+    ${posts.map(p=>{
+      const ago=getTimeAgo(p.time);
+      return`<div class="meal-card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:32px;height:32px;background:var(--card2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:var(--push)">${p.user.split(' ').map(n=>n[0]).slice(0,2).join('')}</div>
+            <div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase">${p.user}</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.5px">${ago}</div></div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">♥ ${p.likes||0}</div>
+        </div>
+        <div style="font-size:13px;color:var(--text);line-height:1.6;margin-bottom:${p.workout?'8':'0'}px">${p.text}</div>
+        ${p.workout?`<div style="background:var(--card2);border-radius:8px;padding:8px 12px;display:inline-flex;gap:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:${tabColors[p.workout.type]||'var(--push)'};letter-spacing:.5px;text-transform:uppercase">${p.workout.type} · ${p.workout.duration}</div>`:''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+window.openPostModal=()=>{
+  State.modal=`<div class="modal-backdrop" onclick="closeModal(event)"><div class="gen-modal" onclick="event.stopPropagation()">
+    <h3 class="display" style="font-size:22px;margin-bottom:8px">SHARE UPDATE</h3>
+    <p style="color:var(--muted2);font-size:13px;margin-bottom:16px">Share your progress with the community</p>
+    <textarea class="input" id="postText" rows="4" placeholder="What's on your mind? Share a tip, PR, or motivation…" style="resize:vertical"></textarea>
+    <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="submitPost()">Post</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="closeModal()">Cancel</button>
+  </div></div>`;render();
+};
+window.submitPost=()=>{
+  const text=document.getElementById('postText')?.value?.trim();
+  if(!text)return showToast('Write something first','error');
+  if(!State.communityPosts)State.communityPosts=[];
+  const lastWorkout=(State.currentUser?.workoutHistory||[]).slice(-1)[0];
+  State.communityPosts.push({
+    user:State.currentUser?.name||'Anonymous',
+    text,time:Date.now(),likes:0,
+    workout:lastWorkout?{type:lastWorkout.tab,duration:Math.round((lastWorkout.elapsed||0)/60000)+' min'}:null
+  });
+  State.modal=null;showToast('Posted!');render();
+};
+
 const NAV_SVG={
   home:`<svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>`,
   workouts:`<svg viewBox="0 0 24 24"><rect x="2" y="10.5" width="3.5" height="3" rx="1"/><rect x="18.5" y="10.5" width="3.5" height="3" rx="1"/><rect x="5.5" y="8.5" width="2" height="7" rx="1"/><rect x="16.5" y="8.5" width="2" height="7" rx="1"/><line x1="7.5" y1="12" x2="16.5" y2="12"/></svg>`,
@@ -2803,6 +2961,7 @@ const NAV_SVG={
   trainers:`<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><path d="M16 6l2 2 4-4"/></svg>`,
   cycle:`<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`,
   ai:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>`,
+  community:`<svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="7" r="3"/><path d="M2 20c0-3 2.5-5.5 7-5.5s7 2.5 7 5.5"/><path d="M15 14.5c2.5 0 5 1.2 5 3.5"/></svg>`,
   profile:`<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`
 };
 function renderBottomNav(){
@@ -2811,10 +2970,10 @@ function renderBottomNav(){
   const items=isFemale?[
     {p:'home',i:'home',l:'Home'},{p:'workouts',i:'workouts',l:'Train'},{p:'diet',i:'diet',l:'Diet'},
     {p:'trainers',i:'trainers',l:'Coaches'},{p:'cycle',i:'cycle',l:'Cycle'},
-    {p:'ai-chat',i:'ai',l:'AI'},{p:'profile',i:'profile',l:'Me'}
+    {p:'ai-chat',i:'ai',l:'AI'},{p:'community',i:'community',l:'Social'},{p:'profile',i:'profile',l:'Me'}
   ]:[
     {p:'home',i:'home',l:'Home'},{p:'workouts',i:'workouts',l:'Train'},{p:'diet',i:'diet',l:'Diet'},
-    {p:'trainers',i:'trainers',l:'Coaches'},{p:'ai-chat',i:'ai',l:'AI'},{p:'profile',i:'profile',l:'Me'}
+    {p:'trainers',i:'trainers',l:'Coaches'},{p:'ai-chat',i:'ai',l:'AI'},{p:'community',i:'community',l:'Social'},{p:'profile',i:'profile',l:'Me'}
   ];
   const active=State.currentPage;
   return`<div class="bottom-nav ${isFemale?'female':'male'}">
@@ -2907,8 +3066,8 @@ function renderTrainerDetail(){
 function renderWorkoutLog(){
   const s=State.workoutSession;
   if(!s)return`<div class="page"><button class="auth-back" onclick="goto('home')">← Home</button><p style="color:var(--muted)">No active session.</p></div>`;
-  const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)'};
-  const tabNames={push:'PUSH DAY',pull:'PULL DAY',legs:'LEG DAY',full:'FULL BODY'};
+  const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)',yoga:'var(--yoga)',home:'var(--home)',pranayama:'var(--pranayama)',calisthenics:'var(--calisthenics)'};
+  const tabNames={push:'PUSH DAY',pull:'PULL DAY',legs:'LEG DAY',full:'FULL BODY',yoga:'YOGA',home:'HOME WORKOUT',pranayama:'PRANAYAMA',calisthenics:'CALISTHENICS'};
   return`<div class="page fade-in" style="padding-bottom:100px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <button class="auth-back" style="margin-bottom:0" onclick="confirmEndWorkout()">✕ End</button>
@@ -2958,8 +3117,8 @@ function renderWorkoutHistory(){
       const ri=history.length-1-i;
       const doneCount=s.exercises.reduce((a,ex)=>a+ex.sets.filter(st=>st.done).length,0);
       const totalSets=s.exercises.reduce((a,ex)=>a+ex.sets.length,0);
-      const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)'};
-      const tabNames={push:'Push Day',pull:'Pull Day',legs:'Leg Day',full:'Full Body'};
+      const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)',yoga:'var(--yoga)',home:'var(--home)',pranayama:'var(--pranayama)',calisthenics:'var(--calisthenics)'};
+      const tabNames={push:'Push Day',pull:'Pull Day',legs:'Leg Day',full:'Full Body',yoga:'Yoga',home:'Home Workout',pranayama:'Pranayama',calisthenics:'Calisthenics'};
       const isOpen=State.workoutHistoryOpen===ri;
       return`<div class="history-card" onclick="toggleHistoryCard(${ri})">
         <div class="history-date">${new Date(s.startTime).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'}).toUpperCase()}</div>
@@ -3073,6 +3232,10 @@ function renderGymScanner(){
     <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:20px;border-left:3px solid var(--push)">
       <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--push);letter-spacing:2px;margin-bottom:6px">AI INSTRUCTIONS</div>
       <div style="font-size:13px;color:var(--muted2);line-height:1.7">Upload 3–4 photos covering your gym floor: machines, free weights, cable stations, and cardio equipment. The AI will detect everything and build a personalized workout + diet + grocery plan.</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card);border-radius:10px;padding:12px 16px;margin-bottom:16px">
+      <span style="font-size:12px;color:var(--muted2)">Scans this month</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:${State.currentUser?.isPremium?'var(--green)':'var(--push)'}">${getScansRemaining()} ${State.currentUser?.isPremium?'(unlimited)':'/ 3 remaining'}</span>
     </div>
     <div class="scanner-preview" id="scanPreview">
       ${State.scanImages.length>0
@@ -3962,9 +4125,7 @@ window.capturePhoto=()=>{
 };
 window.startGymScan=async()=>{
   if(!canScan()){
-    const last=parseInt(localStorage.getItem('ff_last_scan'),10);
-    const daysLeft=30-Math.floor((Date.now()-last)/864e5);
-    return showToast(`Free scan limit: 1/30 days. ${daysLeft}d left. Upgrade for unlimited.`,'error');
+    return showToast(`Free limit: 3 scans/month. ${getScansRemaining()} remaining. Upgrade for unlimited.`,'error');
   }
   const images=State.scanImages;
   if(!images.length)return showToast('Add at least one gym photo first','error');
