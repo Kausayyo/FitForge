@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FitForge — Forge Your Fittest Self</title>
+  <meta name="description" content="India's first AI gym scanner. Point, shoot, train. ₹500/month.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===== PRELOADER ===== -->
+<div id="preloader">
+  <div class="pre-inner">
+    <p class="pre-label">LOADING EXPERIENCE</p>
+    <h1 class="pre-title">FIT<em>FORGE</em></h1>
+    <div class="pre-bar"><div class="pre-fill" id="preFill"></div></div>
+    <button class="pre-enter" id="preEnter">CLICK TO ENTER</button>
+    <p class="pre-hint">BEST EXPERIENCED ON DESKTOP</p>
+  </div>
+</div>
+
+<!-- ===== THREE.JS CANVAS ===== -->
+<canvas id="scene"></canvas>
+
+<!-- ===== GRADIENT BACKDROP ===== -->
+<div class="gradient-bg" id="gradientBg"></div>
+
+<!-- ===== NAV ===== -->
+<header class="nav" id="nav">
+  <a href="#" class="nav-logo">Fit<em>Forge</em></a>
+  <div class="nav-right">
+    <span class="nav-counter" id="navCounter">01 / 09</span>
+    <a href="#" class="nav-menu js-get-app">GET APP</a>
+  </div>
+</header>
+
+<!-- ===== DOT PAGINATION ===== -->
+<div class="dot-nav" id="dotNav">
+  <button class="dot is-active" data-idx="0"></button>
+  <button class="dot" data-idx="1"></button>
+  <button class="dot" data-idx="2"></button>
+  <button class="dot" data-idx="3"></button>
+  <button class="dot" data-idx="4"></button>
+  <button class="dot" data-idx="5"></button>
+  <button class="dot" data-idx="6"></button>
+  <button class="dot" data-idx="7"></button>
+  <button class="dot" data-idx="8"></button>
+</div>
+
+<!-- ===== SCROLL SECTIONS ===== -->
+<div class="scroll-wrap" id="scrollWrap">
+
+  <!-- 1. HERO -->
+  <section class="panel" id="s-hero">
+    <div class="panel-content">
+      <span class="panel-tag">AI-POWERED FITNESS &middot; MADE FOR INDIA</span>
+      <h2 class="panel-heading">FORGE YOUR<br>FITTEST SELF</h2>
+      <p class="panel-desc">Point your camera at any gym. FitForge sees the equipment, builds your plan, counts your macros and writes your grocery list &mdash; in rupees, in your language of food.</p>
+      <a href="#" class="panel-cta js-get-app">Get FitForge Free</a>
+    </div>
+    <p class="panel-sub">India's first AI gym scanner meets intelligent programming</p>
+    <p class="scroll-hint">SCROLL TO DISCOVER</p>
+  </section>
+
+  <!-- 2. AI SCANNER -->
+  <section class="panel panel--split" id="s-scanner">
+    <div class="panel-content">
+      <span class="panel-tag">AI GYM SCANNER</span>
+      <h2 class="panel-heading">ONE PHOTO.<br>YOUR ENTIRE<br>PLAN.</h2>
+      <p class="panel-desc">Point your camera at any gym. Gemini Vision identifies every barbell, dumbbell, cable machine, resistance band &mdash; and builds your custom program in seconds.</p>
+      <a href="#" class="panel-cta js-get-app">Try the Scanner</a>
+    </div>
+    <div class="panel-visual vis-scanner">
+      <div class="phone-mock">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="scan-viewfinder">
+            <div class="scan-corner scan-corner--tl"></div>
+            <div class="scan-corner scan-corner--tr"></div>
+            <div class="scan-corner scan-corner--bl"></div>
+            <div class="scan-corner scan-corner--br"></div>
+            <div class="scan-line-anim"></div>
+          </div>
+          <div class="scan-tag" style="top:18%;left:12%"><span class="scan-dot"></span>Barbell</div>
+          <div class="scan-tag" style="top:38%;left:52%"><span class="scan-dot"></span>Cable Machine</div>
+          <div class="scan-tag" style="top:58%;left:18%"><span class="scan-dot"></span>Dumbbells &times;4</div>
+          <div class="scan-tag" style="top:75%;left:45%"><span class="scan-dot"></span>Bench Press</div>
+          <div class="scan-tag" style="top:28%;left:65%"><span class="scan-dot"></span>Lat Pulldown</div>
+          <div class="scan-status">
+            <span class="scan-status-dot"></span>
+            5 equipment detected &mdash; building PPL plan...
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. CYCLE TRACKER -->
+  <section class="panel panel--split" id="s-cycle">
+    <div class="panel-content">
+      <span class="panel-tag">PERIOD CYCLE TRACKER</span>
+      <h2 class="panel-heading">YOUR CYCLE.<br>YOUR<br>STRENGTH.</h2>
+      <p class="panel-desc">Training adapts to your menstrual phase. Higher intensity during follicular, recovery during luteal. Science-backed periodization that works with your body, not against it.</p>
+      <a href="#" class="panel-cta js-get-app">Track Your Cycle</a>
+    </div>
+    <div class="panel-visual vis-cycle">
+      <div class="cycle-ring">
+        <svg viewBox="0 0 200 200" class="cycle-svg">
+          <circle cx="100" cy="100" r="85" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="24"/>
+          <circle cx="100" cy="100" r="85" fill="none" stroke="#ff33aa" stroke-width="24" stroke-dasharray="67 467" stroke-dashoffset="-10" class="cycle-arc cycle-arc--menstrual"/>
+          <circle cx="100" cy="100" r="85" fill="none" stroke="#ff88cc" stroke-width="24" stroke-dasharray="160 374" stroke-dashoffset="-77" class="cycle-arc cycle-arc--follicular"/>
+          <circle cx="100" cy="100" r="85" fill="none" stroke="#ffaadd" stroke-width="24" stroke-dasharray="40 494" stroke-dashoffset="-237" class="cycle-arc cycle-arc--ovulatory"/>
+          <circle cx="100" cy="100" r="85" fill="none" stroke="#cc66aa" stroke-width="24" stroke-dasharray="160 374" stroke-dashoffset="-277" class="cycle-arc cycle-arc--luteal"/>
+        </svg>
+        <div class="cycle-center">
+          <span class="cycle-day">Day 14</span>
+          <span class="cycle-phase">Follicular</span>
+          <span class="cycle-tip">Peak Strength</span>
+        </div>
+        <div class="cycle-label cycle-label--1">Menstrual<br><small>Rest &amp; Recover</small></div>
+        <div class="cycle-label cycle-label--2">Follicular<br><small>Build Strength</small></div>
+        <div class="cycle-label cycle-label--3">Ovulatory<br><small>Peak Power</small></div>
+        <div class="cycle-label cycle-label--4">Luteal<br><small>Steady State</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. WORKOUTS -->
+  <section class="panel panel--split" id="s-workouts">
+    <div class="panel-content">
+      <span class="panel-tag">500+ EXERCISES</span>
+      <h2 class="panel-heading">GYM. HOME.<br>YOGA. ANCIENT<br>ARTS.</h2>
+      <div class="feature-chips">
+        <span class="chip">PPL Splits</span>
+        <span class="chip">Home Workouts</span>
+        <span class="chip">Yoga Asanas</span>
+        <span class="chip">Surya Namaskar</span>
+        <span class="chip">Pranayama</span>
+        <span class="chip">Mallakhamba</span>
+        <span class="chip">Resistance Bands</span>
+        <span class="chip">Calisthenics</span>
+      </div>
+      <a href="#" class="panel-cta js-get-app">Explore Exercises</a>
+    </div>
+    <div class="panel-visual vis-workouts">
+      <div class="workout-grid">
+        <div class="workout-card workout-card--1">
+          <div class="wk-icon">&#x1F9D8;</div>
+          <span class="wk-name">Surya Namaskar</span>
+          <span class="wk-meta">12 poses &middot; Full Body</span>
+        </div>
+        <div class="workout-card workout-card--2">
+          <div class="wk-icon">&#x1F4AA;</div>
+          <span class="wk-name">Push Day</span>
+          <span class="wk-meta">Chest &middot; Shoulders &middot; Triceps</span>
+        </div>
+        <div class="workout-card workout-card--3">
+          <div class="wk-icon">&#x1F3CB;</div>
+          <span class="wk-name">Home HIIT</span>
+          <span class="wk-meta">No equipment &middot; 25 min</span>
+        </div>
+        <div class="workout-card workout-card--4">
+          <div class="wk-icon">&#x1F54A;</div>
+          <span class="wk-name">Pranayama</span>
+          <span class="wk-meta">Breathing &middot; Recovery</span>
+        </div>
+      </div>
+    </div>
+    <p class="panel-sub">5,000 years of Indian training wisdom meets modern sports science</p>
+  </section>
+
+  <!-- 5. DIET + GROCERIES -->
+  <section class="panel panel--split" id="s-diet">
+    <div class="panel-content">
+      <span class="panel-tag">INDIAN NUTRITION</span>
+      <h2 class="panel-heading">DAL. PANEER.<br>ROTI. PERFECT<br>MACROS.</h2>
+      <p class="panel-desc">AI-generated diet charts built around real Indian food. Weekly grocery lists priced in &#8377;. Vegetarian, non-veg, eggetarian &mdash; your culture, your macros, your budget.</p>
+      <a href="#" class="panel-cta js-get-app">Plan Your Meals</a>
+    </div>
+    <div class="panel-visual vis-diet">
+      <div class="phone-mock">
+        <div class="phone-notch"></div>
+        <div class="phone-screen phone-screen--diet">
+          <div class="diet-header">Today's Meals</div>
+          <div class="meal-row">
+            <div class="meal-time">7:30 AM</div>
+            <div class="meal-info">
+              <span class="meal-name">Poha + Masala Chai</span>
+              <span class="meal-cal">320 kcal</span>
+            </div>
+          </div>
+          <div class="meal-row">
+            <div class="meal-time">1:00 PM</div>
+            <div class="meal-info">
+              <span class="meal-name">Dal Tadka + 2 Roti + Sabzi</span>
+              <span class="meal-cal">580 kcal</span>
+            </div>
+          </div>
+          <div class="meal-row">
+            <div class="meal-time">4:30 PM</div>
+            <div class="meal-info">
+              <span class="meal-name">Paneer Tikka + Chutney</span>
+              <span class="meal-cal">280 kcal</span>
+            </div>
+          </div>
+          <div class="meal-row">
+            <div class="meal-time">8:00 PM</div>
+            <div class="meal-info">
+              <span class="meal-name">Chicken Curry + Brown Rice</span>
+              <span class="meal-cal">620 kcal</span>
+            </div>
+          </div>
+          <div class="diet-macros">
+            <div class="macro"><span class="macro-val">142g</span><span class="macro-lbl">Protein</span></div>
+            <div class="macro"><span class="macro-val">210g</span><span class="macro-lbl">Carbs</span></div>
+            <div class="macro"><span class="macro-val">58g</span><span class="macro-lbl">Fat</span></div>
+          </div>
+          <div class="diet-total">1,800 kcal <span>&#8377;180/day</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="panel-sub">Weekly grocery lists in &#8377; &mdash; from kirana to supermarket</p>
+  </section>
+
+  <!-- 6. TRAINERS -->
+  <section class="panel panel--split" id="s-trainers">
+    <div class="panel-content">
+      <span class="panel-tag">TRAINER MARKETPLACE</span>
+      <h2 class="panel-heading">CERTIFIED.<br>VERIFIED.<br>YOURS.</h2>
+      <p class="panel-desc">From &#8377;4,500 to &#8377;50,000/month. Every trainer is certification-verified before going live. Trainers earn 20% commission on every client they land through FitForge.</p>
+      <a href="#" class="panel-cta js-get-app">Find a Trainer</a>
+    </div>
+    <div class="panel-visual vis-trainers">
+      <div class="trainer-stack">
+        <div class="trainer-card tc--1">
+          <div class="tc-avatar tc-av--f"></div>
+          <div class="tc-body">
+            <span class="tc-name">Priya Mehta</span>
+            <span class="tc-cert">&#10003; NSCA-CPT &middot; Yoga Alliance</span>
+            <div class="tc-row">
+              <span class="tc-price">&#8377;8,000<small>/mo</small></span>
+              <span class="tc-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+            </div>
+          </div>
+        </div>
+        <div class="trainer-card tc--2">
+          <div class="tc-avatar tc-av--m"></div>
+          <div class="tc-body">
+            <span class="tc-name">Arjun Kapoor</span>
+            <span class="tc-cert">&#10003; ACE Certified &middot; ISSA</span>
+            <div class="tc-row">
+              <span class="tc-price">&#8377;15,000<small>/mo</small></span>
+              <span class="tc-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+            </div>
+          </div>
+        </div>
+        <div class="trainer-card tc--3">
+          <div class="tc-avatar tc-av--f2"></div>
+          <div class="tc-body">
+            <span class="tc-name">Deepa Sharma</span>
+            <span class="tc-cert">&#10003; RYT-500 &middot; Mallakhamba Coach</span>
+            <div class="tc-row">
+              <span class="tc-price">&#8377;6,500<small>/mo</small></span>
+              <span class="tc-stars">&#9733;&#9733;&#9733;&#9733;&#9734;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="panel-sub">Show your credentials. Build your client base. Earn while you train.</p>
+  </section>
+
+  <!-- 7. IMPACT -->
+  <section class="panel panel--split" id="s-impact">
+    <div class="panel-content">
+      <span class="panel-tag">THE MISSION</span>
+      <h2 class="panel-heading">820 MILLION<br>REASONS<br>TO MOVE.</h2>
+      <p class="panel-desc">India has the world's largest untapped fitness market. We're making world-class training accessible to every Indian &mdash; not just the metro elite.</p>
+      <a href="#" class="panel-cta js-get-app">Join the Mission</a>
+    </div>
+    <div class="panel-visual vis-impact">
+      <div class="impact-stats">
+        <div class="impact-stat">
+          <span class="impact-num" data-target="820">0</span><span class="impact-unit">M</span>
+          <span class="impact-lbl">Inactive Indians aged 18-62</span>
+        </div>
+        <div class="impact-stat">
+          <span class="impact-num" data-target="30">0</span><span class="impact-unit">%</span>
+          <span class="impact-lbl">India's fitness-app CAGR</span>
+        </div>
+        <div class="impact-stat">
+          <span class="impact-num" data-target="600">0</span><span class="impact-unit">M+</span>
+          <span class="impact-lbl">Smartphones ready</span>
+        </div>
+        <div class="impact-stat">
+          <span class="impact-num" data-target="500">&#8377;</span><span class="impact-unit">/mo</span>
+          <span class="impact-lbl">Breaking the price barrier</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. PRICING -->
+  <section class="panel" id="s-pricing">
+    <div class="panel-content panel-content--wide">
+      <span class="panel-tag">SIMPLE PRICING</span>
+      <h2 class="panel-heading">&#8377;500/MONTH.<br>EVERYTHING.</h2>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <p class="price-tier">Free</p>
+          <p class="price-amount">&#8377;0</p>
+          <ul class="price-features">
+            <li>3 gym scans/month</li>
+            <li>Basic workout library</li>
+            <li>Nutrition tips</li>
+            <li>Community access</li>
+          </ul>
+          <a href="#" class="panel-cta js-get-app">Start Free</a>
+        </div>
+        <div class="price-card price-card--pro">
+          <p class="price-tier">Pro</p>
+          <p class="price-amount">&#8377;500<span>/mo</span></p>
+          <ul class="price-features">
+            <li>Unlimited AI scans</li>
+            <li>Cycle-aware training</li>
+            <li>Full diet + grocery lists</li>
+            <li>500+ exercises + yoga</li>
+            <li>Trainer marketplace</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="#" class="panel-cta js-get-app">Go Pro</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. CTA -->
+  <section class="panel" id="s-cta">
+    <div class="panel-content">
+      <span class="panel-tag">JOIN THE MOVEMENT</span>
+      <h2 class="panel-heading">READY TO<br>FORGE?</h2>
+      <p class="panel-desc">50 spots. Hyderabad first. India next. Download now and be among the first to experience AI-powered fitness &mdash; made for India, priced for India.</p>
+      <a href="#" class="panel-cta panel-cta--big js-get-app">Download FitForge Free</a>
+    </div>
+    <p class="panel-sub">Available as Web App &middot; Android &amp; iOS coming soon</p>
+  </section>
+
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+}}
+</script>
+<script type="module" src="js/main.js"></script>
+
+</body>
+</html>
