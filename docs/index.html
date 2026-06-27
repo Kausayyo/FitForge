@@ -139,9 +139,10 @@
   .tab.active.home{color:var(--home);border-bottom-color:var(--home)}
   .tab.active.pranayama{color:var(--pranayama);border-bottom-color:var(--pranayama)}
   .tab.active.calisthenics{color:var(--calisthenics);border-bottom-color:var(--calisthenics)}
+  .tab.active.mallakhamba{color:var(--gold);border-bottom-color:var(--gold)}
   /* EXERCISE CARDS */
   .ex-card{background:var(--card);border-radius:14px;margin-bottom:14px;overflow:hidden;border-top:3px solid var(--push);position:relative}
-  .ex-card.push{border-top-color:var(--push)}.ex-card.pull{border-top-color:var(--pull)}.ex-card.legs{border-top-color:var(--legs)}.ex-card.full{border-top-color:var(--full)}.ex-card.yoga{border-top-color:var(--yoga)}.ex-card.home{border-top-color:var(--home)}.ex-card.pranayama{border-top-color:var(--pranayama)}.ex-card.calisthenics{border-top-color:var(--calisthenics)}
+  .ex-card.push{border-top-color:var(--push)}.ex-card.pull{border-top-color:var(--pull)}.ex-card.legs{border-top-color:var(--legs)}.ex-card.full{border-top-color:var(--full)}.ex-card.yoga{border-top-color:var(--yoga)}.ex-card.home{border-top-color:var(--home)}.ex-card.pranayama{border-top-color:var(--pranayama)}.ex-card.calisthenics{border-top-color:var(--calisthenics)}.ex-card.mallakhamba{border-top-color:var(--gold)}
   .ex-visual{height:160px;position:relative;overflow:hidden;background:var(--card2);display:flex;align-items:center;justify-content:center}
   .ex-visual svg{width:100%;height:100%}
   .lock-overlay{position:absolute;inset:0;background:rgba(13,13,18,.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:2;cursor:pointer}
@@ -152,7 +153,7 @@
   .ex-num{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px}
   .ex-name{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
   .ex-sets{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--push);margin-bottom:10px;font-weight:500}
-  .ex-card.pull .ex-sets{color:var(--pull)}.ex-card.legs .ex-sets{color:var(--legs)}.ex-card.full .ex-sets{color:var(--full)}.ex-card.yoga .ex-sets{color:var(--yoga)}.ex-card.home .ex-sets{color:var(--home)}.ex-card.pranayama .ex-sets{color:var(--pranayama)}.ex-card.calisthenics .ex-sets{color:var(--calisthenics)}
+  .ex-card.pull .ex-sets{color:var(--pull)}.ex-card.legs .ex-sets{color:var(--legs)}.ex-card.full .ex-sets{color:var(--full)}.ex-card.yoga .ex-sets{color:var(--yoga)}.ex-card.home .ex-sets{color:var(--home)}.ex-card.pranayama .ex-sets{color:var(--pranayama)}.ex-card.calisthenics .ex-sets{color:var(--calisthenics)}.ex-card.mallakhamba .ex-sets{color:var(--gold)}
   .ex-tip{font-size:12px;color:var(--muted2);line-height:1.55;border-left:2px solid var(--border);padding-left:10px;margin-bottom:10px}
   .ex-muscles{display:flex;flex-wrap:wrap;gap:5px}
   .muscle-pill{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;background:rgba(232,92,58,.1);color:var(--push)}
@@ -164,6 +165,7 @@
   .ex-card.home .muscle-pill:not(.sec){background:rgba(78,205,196,.1);color:var(--home)}
   .ex-card.pranayama .muscle-pill:not(.sec){background:rgba(245,166,35,.1);color:var(--pranayama)}
   .ex-card.calisthenics .muscle-pill:not(.sec){background:rgba(232,92,58,.1);color:var(--calisthenics)}
+  .ex-card.mallakhamba .muscle-pill:not(.sec){background:rgba(251,191,36,.1);color:var(--gold)}
   /* DIET */
   .macros{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
   .macro-cell{background:var(--card);border-radius:12px;padding:16px 10px;text-align:center;border-top:3px solid var(--border)}
@@ -1070,7 +1072,9 @@ const EXERCISES = {
     premium:[
       {name:'Diamond Push-Ups',sets:'3 sets × 12-15 reps · Rest 60s',tip:'Hands together forming diamond shape under chest. Elbows stay close to body. Tricep destroyer.',muscles:['Triceps','Chest','Core'],svg:'cgbench'},
       {name:'Jump Squats',sets:'3 sets × 15 reps · Rest 60s',tip:'Squat down, explode up. Land softly on balls of feet. Immediate descent into next rep.',muscles:['Quads','Glutes','Calves'],svg:'squat'},
-      {name:'Burpees',sets:'3 sets × 10 reps · Rest 90s',tip:'Drop to push-up, chest touches floor, push up, jump feet to hands, explode up with hands overhead.',muscles:['Full Body','Cardio'],svg:'plank'}
+      {name:'Burpees',sets:'3 sets × 10 reps · Rest 90s',tip:'Drop to push-up, chest touches floor, push up, jump feet to hands, explode up with hands overhead.',muscles:['Full Body','Cardio'],svg:'plank'},
+      {name:'Resistance Band Pull-Apart',sets:'3 sets × 20 reps · Rest 45s',tip:'Hold band at chest height, arms straight. Pull apart until band touches chest. Squeeze shoulder blades together.',muscles:['Rear Delts','Upper Back','Posture'],svg:'facepull'},
+      {name:'Resistance Band Squat',sets:'3 sets × 15 reps · Rest 60s',tip:'Stand on band, hold ends at shoulders. Squat down driving knees out against band resistance. Glute activator.',muscles:['Quads','Glutes','Core'],svg:'squat'}
     ]
   },
   pranayama:{
@@ -1095,6 +1099,18 @@ const EXERCISES = {
       {name:'Muscle-Up (Progression)',sets:'5 sets × 3-5 reps · Rest 2 min',tip:'Start with explosive pull-ups. When chin is well over bar, push down and transition. The holy grail of calisthenics.',muscles:['Lats','Chest','Triceps'],svg:'pullup'},
       {name:'L-Sit Hold',sets:'4 sets × 15-20s · Rest 60s',tip:'On parallel bars or floor. Legs straight in front, parallel to ground. Core and hip flexors on fire.',muscles:['Core','Hip Flexors','Triceps'],svg:'plank'},
       {name:'Handstand Push-Up (Wall)',sets:'3 sets × 5-8 reps · Rest 2 min',tip:'Kick up to wall handstand. Lower head toward floor. Press back up. Ultimate shoulder strength builder.',muscles:['Shoulders','Triceps','Core'],svg:'ohp'}
+    ]
+  },
+  mallakhamba:{
+    free:[
+      {name:'Pole Hang (Basic)',sets:'4 sets × 20s hold · Rest 60s',tip:'Grip pole at chest height, lift feet off ground. Squeeze core and hold. Builds grip and core like nothing else.',muscles:['Grip','Core','Forearms'],svg:'pullup'},
+      {name:'Flag Pose (Dhwaj)',sets:'3 sets × 10s each side · Rest 90s',tip:'Grip pole with both hands, extend body sideways like a flag. Start with bent knees, progress to straight legs.',muscles:['Obliques','Lats','Shoulders'],svg:'plank'},
+      {name:'Pole Climb',sets:'3 climbs × 3m · Rest 2 min',tip:'Grip pole, cross ankles around it, push up with legs while pulling with arms. Ancient full-body strength builder.',muscles:['Full Body','Grip','Lats'],svg:'pullup'}
+    ],
+    premium:[
+      {name:'Inverted Hang (Ulta Latkna)',sets:'3 sets × 15s · Rest 90s',tip:'Hang upside down from pole using leg grip only. Arms free. Builds incredible core and leg grip strength.',muscles:['Core','Hamstrings','Balance'],svg:'pullup'},
+      {name:'Rope Mallakhamba Climb',sets:'3 climbs · Rest 2 min',tip:'Climb thick rope using only arms and hip grip. No feet allowed. The ultimate upper body test from ancient India.',muscles:['Lats','Biceps','Grip','Core'],svg:'pullup'},
+      {name:'Vrischikasana on Pole (Scorpion)',sets:'3 sets × 10s · Rest 2 min',tip:'Advanced: handstand on pole, arch back into scorpion. Requires months of progression. Peak mallakhamba artistry.',muscles:['Shoulders','Back','Core','Balance'],svg:'ohp'}
     ]
   }
 };
@@ -1141,7 +1157,15 @@ const EXERCISE_SEARCH_MAP = {
   'Pistol Squat (Assisted)': 'pistol squat',
   'Muscle-Up (Progression)': 'muscle up',
   'L-Sit Hold': 'l sit',
-  'Handstand Push-Up (Wall)': 'handstand push up'
+  'Handstand Push-Up (Wall)': 'handstand push up',
+  'Resistance Band Pull-Apart':'resistance band pull apart',
+  'Resistance Band Squat':'resistance band squat',
+  'Pole Hang (Basic)':'pole exercise hang',
+  'Flag Pose (Dhwaj)':'human flag exercise',
+  'Pole Climb':'rope climb exercise',
+  'Inverted Hang (Ulta Latkna)':'inverted hang exercise',
+  'Rope Mallakhamba Climb':'rope climb',
+  'Vrischikasana on Pole (Scorpion)':'scorpion pose handstand'
 };
 async function fetchExerciseGifs(){
   const key=getWorkoutXKey();
@@ -1292,6 +1316,13 @@ const MEALS = {
     {time:'2:30 PM',name:'Pre-Work Snack',tag:'Cook · 5 min',foods:'100g paneer (raw, salt + pepper) + 1 fruit',protein:18},
     {time:'7:00 PM',name:'Office Snack',tag:'No Cook',foods:'100g roasted chana in zip-lock bag (pack before work)',protein:17},
     {time:'12:30 AM',name:'Post-Work Dinner',tag:'Cook · 10 min',foods:'3-egg omelette OR 150g paneer bhurji + 1 chapati',protein:48}
+  ],
+  eggetarian:[
+    {time:'10:15 AM',name:'Pre-Gym',tag:'Cook · 10 min',foods:'3 boiled eggs + 1 banana',protein:21},
+    {time:'1:00 PM',name:'Post-Workout Lunch',tag:'PG Meal',foods:'Egg curry + dal + 2-3 chapati + curd',protein:48},
+    {time:'2:30 PM',name:'Pre-Work Snack',tag:'Cook · 5 min',foods:'2 boiled eggs + 100g paneer + 1 fruit',protein:30},
+    {time:'7:00 PM',name:'Office Snack',tag:'No Cook',foods:'100g roasted chana in zip-lock bag',protein:17},
+    {time:'12:30 AM',name:'Post-Work Dinner',tag:'Cook · 10 min',foods:'3-egg omelette + paneer bhurji + 1 chapati',protein:48}
   ],
   'non-veg':[
     {time:'10:15 AM',name:'Pre-Gym',tag:'Cook · 10 min',foods:'3 boiled eggs + 1 banana',protein:21},
@@ -1489,27 +1520,27 @@ function groceryLinks(itemName){
 // TRAINERS DATA
 // ============================================================
 const TRAINERS = [
-  {id:'t1',name:'Rajesh Kumar',spec:'Strength & Powerlifting',rating:4.9,sessions:850,price:800,premium:false,
+  {id:'t1',name:'Rajesh Kumar',spec:'Strength & Powerlifting',rating:4.9,sessions:850,price:800,monthlyPrice:5500,premium:false,
    certs:['NSCA-CSCS Certified','ACE Personal Trainer','5 Years Experience'],
    bio:'Former national-level powerlifter. Specializes in getting clients to their first 100 kg squat and building raw, functional strength.',
    types:['Online','In-Person (Hyderabad)'],avail:['Mon','Wed','Fri','Sat']},
-  {id:'t2',name:'Priya Sharma',spec:'Fat Loss & Nutrition',rating:4.8,sessions:1200,price:900,premium:false,
+  {id:'t2',name:'Priya Sharma',spec:'Fat Loss & Nutrition',rating:4.8,sessions:1200,price:900,monthlyPrice:6500,premium:false,
    certs:['ISSA Certified Trainer','Precision Nutrition L1','7 Years Experience'],
    bio:"India's top fat-loss specialist. 300+ clients have reached below 15% body fat under her evidence-based guidance.",
    types:['Online','In-Person (Mumbai)'],avail:['Tue','Thu','Sat','Sun']},
-  {id:'t3',name:'Arjun Mehta',spec:'HIIT & Athletic Performance',rating:4.7,sessions:620,price:750,premium:true,
+  {id:'t3',name:'Arjun Mehta',spec:'HIIT & Athletic Performance',rating:4.7,sessions:620,price:750,monthlyPrice:4500,premium:true,
    certs:['NASM CPT','CrossFit Level 2','4 Years Experience'],
    bio:'Ex-college sprinter turned coach. Builds explosive athletes and cuts body fat while preserving muscle.',
    types:['Online','In-Person (Bangalore)'],avail:['Mon','Tue','Thu','Fri']},
-  {id:'t4',name:'Kavya Nair',spec:"Women's Fitness & Hormones",rating:4.9,sessions:980,price:950,premium:true,
+  {id:'t4',name:'Kavya Nair',spec:"Women's Fitness & Hormones",rating:4.9,sessions:980,price:950,monthlyPrice:7000,premium:true,
    certs:["ACSM Certified","Women's Fitness Specialist","Pre/Post Natal Cert","6 Years Experience"],
    bio:'Expert in training around the menstrual cycle for maximum gains and minimum PMS. Trusted by 500+ women.',
    types:['Online Only'],avail:['Mon','Wed','Fri']},
-  {id:'t5',name:'Vikram Singh',spec:'Bodybuilding & Aesthetics',rating:4.8,sessions:540,price:850,premium:true,
+  {id:'t5',name:'Vikram Singh',spec:'Bodybuilding & Aesthetics',rating:4.8,sessions:540,price:850,monthlyPrice:6000,premium:true,
    certs:['ACE Personal Trainer','IFBB Amateur Competitor','5 Years Experience'],
    bio:'Competed in 3 state-level physique shows. Builds the aesthetic X-frame — wide shoulders, V-taper lats, cut midsection.',
    types:['Online','In-Person (Delhi)'],avail:['Tue','Thu','Sat']},
-  {id:'t6',name:'Ananya Krishnan',spec:'Yoga & Mind-Body Fitness',rating:4.8,sessions:760,price:700,premium:true,
+  {id:'t6',name:'Ananya Krishnan',spec:'Yoga & Mind-Body Fitness',rating:4.8,sessions:760,price:700,monthlyPrice:4500,premium:true,
    certs:['RYT-500 Yoga Alliance','Meditation Coach Cert','8 Years Experience'],
    bio:'Merges ancient yogic wisdom with sports science. Reduces stress, accelerates recovery, and builds functional strength.',
    types:['Online','In-Person (Chennai)'],avail:['Mon','Wed','Fri','Sun']}
@@ -2129,6 +2160,7 @@ function renderOnboarding(){
     <p class="onboard-hint">We'll plan meals around your eating preferences.</p>
     <div>
       <div class="choice-card" data-val="veg" onclick="selectChoice(this,'diet')"><div class="choice-badge">VEG</div><div class="info"><div class="ttl">Vegetarian</div><div class="desc">Eggs OK, no meat or fish</div></div></div>
+      <div class="choice-card" data-val="eggetarian" onclick="selectChoice(this,'diet')"><div class="choice-badge">EGG</div><div class="info"><div class="ttl">Eggetarian</div><div class="desc">Vegetarian + eggs, no meat or fish</div></div></div>
       <div class="choice-card" data-val="non-veg" onclick="selectChoice(this,'diet')"><div class="choice-badge">NV</div><div class="info"><div class="ttl">Non-Vegetarian</div><div class="desc">Meat, fish, eggs — everything</div></div></div>
       <div class="choice-card" data-val="mixed" onclick="selectChoice(this,'diet')"><div class="choice-badge">MIX</div><div class="info"><div class="ttl">Mixed</div><div class="desc">Mostly veg, sometimes meat</div></div></div>
     </div>`;}
@@ -2296,8 +2328,8 @@ function renderHome(){
 
 function renderWorkouts(){
   const tab=State.currentTab||'push';
-  const dayTitles={push:'PUSH DAY',pull:'PULL DAY',legs:'LEG DAY',full:'FULL BODY',yoga:'YOGA',home:'HOME WORKOUT',pranayama:'PRANAYAMA',calisthenics:'CALISTHENICS'};
-  const muscles={push:'Chest · Shoulders · Triceps',pull:'Back · Biceps · Rear Delts',legs:'Quads · Hamstrings · Glutes · Calves',full:'Compound Focus · Everything',yoga:'Flexibility · Balance · Mind-Body',home:'No Equipment · Bodyweight',pranayama:'Breathing · Recovery · Focus',calisthenics:'Bodyweight Strength · Skills'};
+  const dayTitles={push:'PUSH DAY',pull:'PULL DAY',legs:'LEG DAY',full:'FULL BODY',yoga:'YOGA',home:'HOME WORKOUT',pranayama:'PRANAYAMA',calisthenics:'CALISTHENICS',mallakhamba:'MALLAKHAMBA'};
+  const muscles={push:'Chest · Shoulders · Triceps',pull:'Back · Biceps · Rear Delts',legs:'Quads · Hamstrings · Glutes · Calves',full:'Compound Focus · Everything',yoga:'Flexibility · Balance · Mind-Body',home:'No Equipment · Bodyweight',pranayama:'Breathing · Recovery · Focus',calisthenics:'Bodyweight Strength · Skills',mallakhamba:'Ancient Indian Pole · Rope · Gymnastics'};
   const u=State.currentUser;
   const free=EXERCISES[tab].free;
   const premium=EXERCISES[tab].premium;
@@ -2350,6 +2382,7 @@ function renderWorkouts(){
       <button class="tab ${tab==='yoga'?'active yoga':''}" onclick="goto('workouts','yoga')">Yoga</button>
       <button class="tab ${tab==='pranayama'?'active pranayama':''}" onclick="goto('workouts','pranayama')">Pranayama</button>
       <button class="tab ${tab==='calisthenics'?'active calisthenics':''}" onclick="goto('workouts','calisthenics')">Calisthenics</button>
+      <button class="tab ${tab==='mallakhamba'?'active mallakhamba':''}" onclick="goto('workouts','mallakhamba')">Mallakhamba</button>
     </div>
     ${needsGifSetup?`<div style="background:rgba(78,205,196,.06);border:1px solid rgba(78,205,196,.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openWorkoutXSettings()">
   <div style="font-size:20px">🎬</div>
@@ -2911,7 +2944,7 @@ function getTimeAgo(ts){
 function renderCommunity(){
   const u=State.currentUser;
   const posts=[...(State.communityPosts||[]),...DEFAULT_COMMUNITY_POSTS].sort((a,b)=>b.time-a.time);
-  const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)',yoga:'var(--full)',home:'var(--legs)',pranayama:'var(--pull)',calisthenics:'var(--push)'};
+  const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)',yoga:'var(--full)',home:'var(--legs)',pranayama:'var(--pull)',calisthenics:'var(--push)',mallakhamba:'var(--gold)'};
   return`<div class="page fade-in">
     <h1 class="display page-title">COMMUNITY</h1>
     <p class="page-sub">Motivation & tips from the FitForge crew</p>
@@ -3005,7 +3038,7 @@ function renderTrainers(){
             <div class="trainer-name">${t.name}</div>
             <div class="trainer-spec">${t.spec}</div>
             <div class="trainer-rating">${t.rating} · ${t.sessions}+ sessions</div>
-            <div class="trainer-price">₹${t.price}/session</div>
+            <div class="trainer-price">₹${t.monthlyPrice||t.price*8}/mo <span style="color:var(--muted);font-size:9px">· ₹${t.price}/session</span></div>
           </div>
         </div>`;
       }).join('')}
@@ -3036,6 +3069,7 @@ function renderTrainerDetail(){
         <div class="trainer-stat"><div class="v">${t.rating}</div><div class="l">Rating</div></div>
         ${t.sessions?`<div class="trainer-stat"><div class="v">${t.sessions}+</div><div class="l">Sessions</div></div>`:''}
         <div class="trainer-stat"><div class="v">₹${t.price}</div><div class="l">/ Session</div></div>
+        <div class="trainer-stat"><div class="v">₹${t.monthlyPrice||t.price*8}</div><div class="l">/ Month</div></div>
       </div>
     </div>
     <div class="profile-section" style="margin-bottom:14px">
@@ -3066,8 +3100,8 @@ function renderTrainerDetail(){
 function renderWorkoutLog(){
   const s=State.workoutSession;
   if(!s)return`<div class="page"><button class="auth-back" onclick="goto('home')">← Home</button><p style="color:var(--muted)">No active session.</p></div>`;
-  const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)',yoga:'var(--yoga)',home:'var(--home)',pranayama:'var(--pranayama)',calisthenics:'var(--calisthenics)'};
-  const tabNames={push:'PUSH DAY',pull:'PULL DAY',legs:'LEG DAY',full:'FULL BODY',yoga:'YOGA',home:'HOME WORKOUT',pranayama:'PRANAYAMA',calisthenics:'CALISTHENICS'};
+  const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)',yoga:'var(--yoga)',home:'var(--home)',pranayama:'var(--pranayama)',calisthenics:'var(--calisthenics)',mallakhamba:'var(--gold)'};
+  const tabNames={push:'PUSH DAY',pull:'PULL DAY',legs:'LEG DAY',full:'FULL BODY',yoga:'YOGA',home:'HOME WORKOUT',pranayama:'PRANAYAMA',calisthenics:'CALISTHENICS',mallakhamba:'MALLAKHAMBA'};
   return`<div class="page fade-in" style="padding-bottom:100px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <button class="auth-back" style="margin-bottom:0" onclick="confirmEndWorkout()">✕ End</button>
@@ -3117,8 +3151,8 @@ function renderWorkoutHistory(){
       const ri=history.length-1-i;
       const doneCount=s.exercises.reduce((a,ex)=>a+ex.sets.filter(st=>st.done).length,0);
       const totalSets=s.exercises.reduce((a,ex)=>a+ex.sets.length,0);
-      const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)',yoga:'var(--yoga)',home:'var(--home)',pranayama:'var(--pranayama)',calisthenics:'var(--calisthenics)'};
-      const tabNames={push:'Push Day',pull:'Pull Day',legs:'Leg Day',full:'Full Body',yoga:'Yoga',home:'Home Workout',pranayama:'Pranayama',calisthenics:'Calisthenics'};
+      const tabColors={push:'var(--push)',pull:'var(--pull)',legs:'var(--legs)',full:'var(--full)',yoga:'var(--yoga)',home:'var(--home)',pranayama:'var(--pranayama)',calisthenics:'var(--calisthenics)',mallakhamba:'var(--gold)'};
+      const tabNames={push:'Push Day',pull:'Pull Day',legs:'Leg Day',full:'Full Body',yoga:'Yoga',home:'Home Workout',pranayama:'Pranayama',calisthenics:'Calisthenics',mallakhamba:'Mallakhamba'};
       const isOpen=State.workoutHistoryOpen===ri;
       return`<div class="history-card" onclick="toggleHistoryCard(${ri})">
         <div class="history-date">${new Date(s.startTime).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'}).toUpperCase()}</div>
@@ -3961,7 +3995,7 @@ window.openBookingModal=(id)=>{
   const today=new Date().toISOString().split('T')[0];
   State.modal=`<div class="modal-backdrop" onclick="closeModal(event)"><div class="gen-modal" onclick="event.stopPropagation()">
     <h3 class="display" style="font-size:22px;margin-bottom:4px;color:var(--push)">BOOK SESSION</h3>
-    <p style="color:var(--muted2);font-size:13px;margin-bottom:16px">with ${t.name} · ₹${t.price}/session</p>
+    <p style="color:var(--muted2);font-size:13px;margin-bottom:16px">with ${t.name} · ₹${t.price}/session · ₹${t.monthlyPrice||t.price*8}/month</p>
     <div class="form-group"><label class="label">Session Date</label><input class="input" type="date" id="bookDate" min="${today}" value="${today}"></div>
     <div class="form-group"><label class="label">Session Type</label>
       <select class="input" id="bookType">${t.types.map(ty=>`<option>${ty}</option>`).join('')}</select></div>
