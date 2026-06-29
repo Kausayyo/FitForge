@@ -431,11 +431,19 @@
   #app{transition:opacity .08s ease}
   .page-enter{animation:pageEnter .25s ease-out}
   @keyframes pageEnter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .offline-bar{position:fixed;top:0;left:0;right:0;background:var(--red);color:white;text-align:center;padding:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;z-index:999;transform:translateY(-100%);transition:transform .3s}
+  .offline-bar.show{transform:translateY(0)}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div class="offline-bar" id="offlineBar">YOU'RE OFFLINE — APP WORKS IN LOCAL MODE</div>
 <script>
+window.onerror=function(msg,url,line){console.error('FitForge error:',msg,'at line',line);return true;};
+window.onunhandledrejection=function(e){console.error('FitForge promise error:',e.reason);};
+window.addEventListener('online',()=>{document.getElementById('offlineBar')?.classList.remove('show');});
+window.addEventListener('offline',()=>{document.getElementById('offlineBar')?.classList.add('show');});
+if(!navigator.onLine)document.getElementById('offlineBar')?.classList.add('show');
 // Capacitor integration
 let CapCamera, CapPreferences, CapSplashScreen, CapStatusBar;
 if(window.Capacitor){
@@ -504,6 +512,14 @@ async function saveData(key,value){
   try{if(window.storage&&window.storage.set)await window.storage.set(key,s);else localStorage.setItem(key,s);}
   catch(e){try{localStorage.setItem(key,s)}catch(e2){}}
 }
+function checkStorageQuota(){
+  try{
+    const used=new Blob(Object.values(localStorage)).size;
+    const limit=5*1024*1024;
+    if(used>limit*0.9)console.warn('LocalStorage >90% full:',Math.round(used/1024)+'KB');
+    return used<limit*0.95;
+  }catch(e){return true;}
+}
 async function loadData(key){
   try{
     if(window.storage&&window.storage.get){const r=await window.storage.get(key);if(r&&r.value)return JSON.parse(r.value);}
@@ -554,20 +570,26 @@ function markScanned(){
     localStorage.setItem('ff_scan_dates',JSON.stringify(scans));
   }catch(e){}
 }
-async function apiCall(method,path,body){
+async function apiCall(method,path,body,retries=1){
   const token=getJwt();
-  try{
-    const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),5000);
-    const res=await fetch(API_BASE+path,{
-      method,signal:ctrl.signal,
-      headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},
-      ...(body?{body:JSON.stringify(body)}:{})
-    });
-    clearTimeout(tid);
-    if(!res.ok){const e=await res.json().catch(()=>({}));console.warn('FF API',path,e.message||res.status);return null;}
-    return await res.json();
-  }catch(e){console.warn('FF API offline',path,e.message);return null;}
+  for(let attempt=0;attempt<=retries;attempt++){
+    try{
+      const ctrl=new AbortController();
+      const tid=setTimeout(()=>ctrl.abort(),10000);
+      const res=await fetch(API_BASE+path,{
+        method,signal:ctrl.signal,
+        headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},
+        ...(body?{body:JSON.stringify(body)}:{})
+      });
+      clearTimeout(tid);
+      if(!res.ok){const e=await res.json().catch(()=>({}));console.warn('FF API',path,e.message||res.status);return null;}
+      return await res.json();
+    }catch(e){
+      console.warn('FF API attempt',attempt+1,path,e.message);
+      if(attempt<retries)await new Promise(r=>setTimeout(r,2000));
+    }
+  }
+  return null;
 }
 
 // ============================================================
@@ -576,64 +598,83 @@ async function apiCall(method,path,body){
 const SVG = {
   // PUSH ───────────────────────────────────────────────────
   bench:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="50" y="98" width="180" height="8" rx="3" fill="#252535"/>
-    <rect x="65" y="106" width="10" height="25" rx="2" fill="#252535"/>
-    <rect x="205" y="106" width="10" height="25" rx="2" fill="#252535"/>
-    <rect x="22" y="47" width="12" height="26" rx="2" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="47;69;47" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="246" y="47" width="12" height="26" rx="2" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="47;69;47" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="22" y="58" width="236" height="7" rx="3" fill="#4a4a5a"><animate attributeName="y" values="58;80;58" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <circle cx="140" cy="91" r="9" fill="#9a9ab0"/>
-    <rect x="108" y="93" width="64" height="9" rx="3" fill="#7a7a9a"/>
-    <line x1="115" y1="101" x2="103" y2="126" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="165" y1="101" x2="177" y2="126" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="116" y1="97" x2="95" y2="61" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="95;116;95" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="61;80;61" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="164" y1="97" x2="185" y2="61" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="185;164;185" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="61;80;61" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <ellipse cx="140" cy="97" rx="30" ry="7" fill="#e85c3a" opacity="0.18"/>
+    <rect x="50" y="94" width="180" height="10" rx="4" fill="#252535"/>
+    <rect x="65" y="104" width="12" height="28" rx="3" fill="#252535"/>
+    <rect x="203" y="104" width="12" height="28" rx="3" fill="#252535"/>
+    <rect x="20" y="44" width="14" height="28" rx="3" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="44;68;44" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="246" y="44" width="14" height="28" rx="3" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="44;68;44" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="20" y="55" width="240" height="8" rx="4" fill="#4a4a5a"><animate attributeName="y" values="55;79;55" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <circle cx="140" cy="87" r="12" fill="#c4956a"/>
+    <rect x="118" y="88" width="44" height="14" rx="5" fill="#3a3a4f"/>
+    <rect x="104" y="80" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(-15 110 92)"><animate attributeName="transform" type="rotate" values="-15 110 92;5 110 92;-15 110 92" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="164" y="80" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(15 170 92)"><animate attributeName="transform" type="rotate" values="15 170 92;-5 170 92;15 170 92" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="113" y="100" width="14" height="30" rx="7" fill="#3a3a4f" transform="rotate(20 120 100)"/>
+    <rect x="153" y="100" width="14" height="30" rx="7" fill="#3a3a4f" transform="rotate(-20 160 100)"/>
+    <rect x="103" y="122" width="11" height="20" rx="5" fill="#c4956a"/>
+    <rect x="166" y="122" width="11" height="20" rx="5" fill="#c4956a"/>
+    <ellipse cx="140" cy="92" rx="28" ry="8" fill="#e85c3a" opacity="0.15"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">CHEST · SHOULDERS · TRICEPS</text>
   </svg>`,
 
   incline:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="50" y="85" width="150" height="8" rx="3" fill="#252535" transform="rotate(-20 50 85)"/>
-    <rect x="190" y="108" width="50" height="8" rx="3" fill="#252535"/>
-    <rect x="65" y="130" width="10" height="20" rx="2" fill="#252535"/>
-    <rect x="215" y="116" width="10" height="20" rx="2" fill="#252535"/>
-    <circle cx="110" cy="70" r="9" fill="#9a9ab0"/>
-    <rect x="94" y="78" width="56" height="9" rx="3" fill="#7a7a9a" transform="rotate(-20 94 78)"/>
-    <line x1="104" y1="86" x2="96" y2="108" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="148" y1="89" x2="158" y2="110" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="100" y1="83" x2="80" y2="60" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="80;100;80" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="60;76;60" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="142" y1="87" x2="162" y2="62" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="162;142;162" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="62;78;62" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <circle cx="78" cy="57" r="8" fill="none" stroke="#e85c3a" stroke-width="3" opacity="0.9"><animate attributeName="cx" values="78;100;78" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="57;73;57" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <circle cx="164" cy="59" r="8" fill="none" stroke="#e85c3a" stroke-width="3" opacity="0.9"><animate attributeName="cx" values="164;142;164" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="59;75;59" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
+    <rect x="50" y="85" width="150" height="10" rx="4" fill="#252535" transform="rotate(-20 50 85)"/>
+    <rect x="190" y="108" width="50" height="10" rx="4" fill="#252535"/>
+    <rect x="65" y="130" width="12" height="20" rx="3" fill="#252535"/>
+    <rect x="215" y="118" width="12" height="20" rx="3" fill="#252535"/>
+    <circle cx="110" cy="68" r="12" fill="#c4956a"/>
+    <rect x="92" y="76" width="56" height="14" rx="5" fill="#3a3a4f" transform="rotate(-20 94 78)"/>
+    <rect x="92" y="86" width="14" height="28" rx="7" fill="#3a3a4f" transform="rotate(20 99 100)"/>
+    <rect x="148" y="86" width="14" height="28" rx="7" fill="#3a3a4f" transform="rotate(-20 155 100)"/>
+    <rect x="90" y="110" width="11" height="20" rx="5" fill="#c4956a"/>
+    <rect x="158" y="110" width="11" height="20" rx="5" fill="#c4956a"/>
+    <rect x="88" y="78" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(-25 94 90)"><animate attributeName="transform" type="rotate" values="-25 94 90;0 94 90;-25 94 90" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="148" y="78" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(25 154 90)"><animate attributeName="transform" type="rotate" values="25 154 90;0 154 90;25 154 90" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <circle cx="78" cy="57" r="9" fill="#e85c3a" opacity="0.9"><animate attributeName="cx" values="78;100;78" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="57;73;57" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
+    <circle cx="164" cy="59" r="9" fill="#e85c3a" opacity="0.9"><animate attributeName="cx" values="164;142;164" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="59;75;59" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
     <ellipse cx="118" cy="82" rx="22" ry="6" fill="#e85c3a" opacity="0.18" transform="rotate(-20 118 82)"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">UPPER CHEST · TRICEPS</text>
   </svg>`,
 
   ohp:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="140" cy="88" r="9" fill="#9a9ab0"/>
-    <line x1="140" y1="97" x2="140" y2="130" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="140" y1="104" x2="120" y2="118" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="140" y1="104" x2="160" y2="118" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="140" y1="124" x2="126" y2="142" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="140" y1="124" x2="154" y2="142" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="128" y1="102" x2="96" y2="66" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="66;96;66" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="152" y1="102" x2="184" y2="66" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="66;96;66" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <circle cx="94" cy="60" r="9" fill="none" stroke="#e85c3a" stroke-width="3" opacity="0.9"><animate attributeName="cy" values="60;90;60" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <circle cx="186" cy="60" r="9" fill="none" stroke="#e85c3a" stroke-width="3" opacity="0.9"><animate attributeName="cy" values="60;90;60" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <ellipse cx="115" cy="98" rx="12" ry="10" fill="#e85c3a" opacity="0.2"/>
-    <ellipse cx="165" cy="98" rx="12" ry="10" fill="#e85c3a" opacity="0.2"/>
+    <circle cx="140" cy="42" r="12" fill="#c4956a"/>
+    <path d="M122 54 L126 50 L154 50 L158 54 L156 80 Q140 84 124 80 Z" fill="#3a3a4f"/>
+    <rect x="128" y="80" width="10" height="24" rx="5" fill="#c4956a"/>
+    <rect x="142" y="80" width="10" height="24" rx="5" fill="#c4956a"/>
+    <rect x="122" y="80" width="16" height="32" rx="8" fill="#3a3a4f" transform="rotate(5 130 96)"/>
+    <rect x="142" y="80" width="16" height="32" rx="8" fill="#3a3a4f" transform="rotate(-5 150 96)"/>
+    <rect x="122" y="106" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="146" y="106" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="120" y="128" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="144" y="128" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <g><animateTransform attributeName="transform" type="translate" values="0,0;0,-20;0,0" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/>
+      <rect x="108" y="52" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(-20 114 66)"/>
+      <rect x="160" y="52" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(20 166 66)"/>
+      <rect x="96" y="74" width="10" height="22" rx="5" fill="#c4956a" transform="rotate(-10 101 85)"/>
+      <rect x="174" y="74" width="10" height="22" rx="5" fill="#c4956a" transform="rotate(10 179 85)"/>
+      <circle cx="94" cy="92" r="9" fill="#e85c3a" opacity="0.9"/>
+      <circle cx="186" cy="92" r="9" fill="#e85c3a" opacity="0.9"/>
+      <rect x="94" y="88" width="92" height="8" rx="4" fill="#4a4a5a"/>
+    </g>
+    <ellipse cx="115" cy="58" rx="12" ry="10" fill="#e85c3a" opacity="0.2"/>
+    <ellipse cx="165" cy="58" rx="12" ry="10" fill="#e85c3a" opacity="0.2"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">SHOULDERS · TRICEPS</text>
   </svg>`,
 
   lateral:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="140" cy="66" r="9" fill="#9a9ab0"/>
-    <line x1="140" y1="75" x2="140" y2="110" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="140" y1="112" x2="126" y2="134" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="140" y1="112" x2="154" y2="134" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="134" y1="84" x2="72" y2="80" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="72;122;72" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="80;106;80" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="146" y1="84" x2="208" y2="80" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="208;158;208" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="80;106;80" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <circle cx="68" cy="79" r="7" fill="none" stroke="#e85c3a" stroke-width="2.5" opacity="0.9"><animate attributeName="cx" values="68;118;68" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="79;108;79" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <circle cx="212" cy="79" r="7" fill="none" stroke="#e85c3a" stroke-width="2.5" opacity="0.9"><animate attributeName="cx" values="212;162;212" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="79;108;79" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
+    <circle cx="140" cy="30" r="12" fill="#c4956a"/>
+    <path d="M122 42 L126 38 L154 38 L158 42 L156 72 Q140 76 124 72 Z" fill="#3a3a4f"/>
+    <rect x="126" y="72" width="14" height="34" rx="7" fill="#3a3a4f" transform="rotate(4 133 89)"/>
+    <rect x="140" y="72" width="14" height="34" rx="7" fill="#3a3a4f" transform="rotate(-4 147 89)"/>
+    <rect x="124" y="100" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="144" y="100" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="122" y="122" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="142" y="122" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="108" y="46" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(60 114 60)"><animate attributeName="transform" type="rotate" values="60 114 60;-10 114 60;60 114 60" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="160" y="46" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(-60 166 60)"><animate attributeName="transform" type="rotate" values="-60 166 60;10 166 60;-60 166 60" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="90" y="68" width="10" height="22" rx="5" fill="#c4956a" transform="rotate(70 95 79)"><animate attributeName="transform" type="rotate" values="70 95 79;-10 95 79;70 95 79" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="180" y="68" width="10" height="22" rx="5" fill="#c4956a" transform="rotate(-70 185 79)"><animate attributeName="transform" type="rotate" values="-70 185 79;10 185 79;-70 185 79" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <circle cx="68" cy="79" r="7" fill="#e85c3a" opacity="0.9"><animate attributeName="cx" values="68;118;68" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="79;108;79" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
+    <circle cx="212" cy="79" r="7" fill="#e85c3a" opacity="0.9"><animate attributeName="cx" values="212;162;212" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="79;108;79" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">SIDE DELTOIDS (ISOLATED)</text>
   </svg>`,
 
@@ -641,34 +682,40 @@ const SVG = {
     <rect x="224" y="14" width="24" height="120" rx="5" fill="#1e1e2a" stroke="#2a2a38" stroke-width="1"/>
     <circle cx="236" cy="30" r="10" fill="#2a2a38"/>
     <line x1="236" y1="40" x2="174" y2="62" stroke="#4a4a5a" stroke-width="2" stroke-dasharray="3 2" opacity="0.7"/>
-    <circle cx="140" cy="58" r="9" fill="#9a9ab0"/>
-    <line x1="140" y1="67" x2="140" y2="102" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="140" y1="102" x2="126" y2="126" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="140" y1="102" x2="154" y2="126" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="130" y1="76" x2="122" y2="72" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="150" y1="76" x2="158" y2="72" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="122" y1="72" x2="116" y2="100" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="100;52;100" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="158" y1="72" x2="164" y2="100" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="100;52;100" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <rect x="108" y="96" width="24" height="7" rx="2" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="96;48;96" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <ellipse cx="119" cy="84" rx="7" ry="14" fill="#e85c3a" opacity="0.22" transform="rotate(10 119 84)"/>
-    <ellipse cx="161" cy="84" rx="7" ry="14" fill="#e85c3a" opacity="0.22" transform="rotate(-10 161 84)"/>
+    <circle cx="140" cy="28" r="12" fill="#c4956a"/>
+    <path d="M122 40 L126 36 L154 36 L158 40 L156 70 Q140 74 124 70 Z" fill="#3a3a4f"/>
+    <rect x="126" y="70" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(4 133 86)"/>
+    <rect x="140" y="70" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(-4 147 86)"/>
+    <rect x="124" y="96" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="144" y="96" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="122" y="118" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="142" y="118" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="114" y="44" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(-5 120 56)"/>
+    <rect x="154" y="44" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(5 160 56)"/>
+    <rect x="108" y="62" width="10" height="24" rx="5" fill="#c4956a"><animate attributeName="height" values="24;10;24" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="162" y="62" width="10" height="24" rx="5" fill="#c4956a"><animate attributeName="height" values="24;10;24" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="100" y="82" width="24" height="7" rx="2" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="82;66;82" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <ellipse cx="119" cy="60" rx="7" ry="14" fill="#e85c3a" opacity="0.22" transform="rotate(10 119 60)"/>
+    <ellipse cx="161" cy="60" rx="7" ry="14" fill="#e85c3a" opacity="0.22" transform="rotate(-10 161 60)"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">ALL 3 TRICEP HEADS</text>
   </svg>`,
 
   cgbench:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="50" y="98" width="180" height="8" rx="3" fill="#252535"/>
-    <rect x="65" y="106" width="10" height="25" rx="2" fill="#252535"/>
-    <rect x="205" y="106" width="10" height="25" rx="2" fill="#252535"/>
-    <rect x="22" y="47" width="12" height="26" rx="2" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="47;69;47" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="246" y="47" width="12" height="26" rx="2" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="47;69;47" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="22" y="58" width="236" height="7" rx="3" fill="#4a4a5a"><animate attributeName="y" values="58;80;58" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="50" y="94" width="180" height="10" rx="4" fill="#252535"/>
+    <rect x="65" y="104" width="12" height="28" rx="3" fill="#252535"/>
+    <rect x="203" y="104" width="12" height="28" rx="3" fill="#252535"/>
+    <rect x="22" y="47" width="14" height="28" rx="3" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="47;69;47" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="244" y="47" width="14" height="28" rx="3" fill="#e85c3a" opacity="0.9"><animate attributeName="y" values="47;69;47" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="22" y="58" width="236" height="8" rx="4" fill="#4a4a5a"><animate attributeName="y" values="58;80;58" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <rect x="120" y="54" width="40" height="8" rx="3" fill="#e85c3a" opacity="0.4"><animate attributeName="y" values="54;76;54" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <circle cx="140" cy="91" r="9" fill="#9a9ab0"/>
-    <rect x="108" y="93" width="64" height="9" rx="3" fill="#7a7a9a"/>
-    <line x1="115" y1="101" x2="103" y2="126" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="165" y1="101" x2="177" y2="126" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="126" y1="97" x2="122" y2="61" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="61;80;61" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="154" y1="97" x2="158" y2="61" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="61;80;61" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
+    <circle cx="140" cy="87" r="12" fill="#c4956a"/>
+    <rect x="118" y="88" width="44" height="14" rx="5" fill="#3a3a4f"/>
+    <rect x="113" y="100" width="14" height="30" rx="7" fill="#3a3a4f" transform="rotate(20 120 100)"/>
+    <rect x="153" y="100" width="14" height="30" rx="7" fill="#3a3a4f" transform="rotate(-20 160 100)"/>
+    <rect x="103" y="122" width="11" height="20" rx="5" fill="#c4956a"/>
+    <rect x="166" y="122" width="11" height="20" rx="5" fill="#c4956a"/>
+    <rect x="114" y="80" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(-5 120 92)"><animate attributeName="transform" type="rotate" values="-5 120 92;10 120 92;-5 120 92" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="154" y="80" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(5 160 92)"><animate attributeName="transform" type="rotate" values="5 160 92;-10 160 92;5 160 92" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <ellipse cx="124" cy="92" rx="7" ry="14" fill="#e85c3a" opacity="0.22" transform="rotate(15 124 92)"/>
     <ellipse cx="156" cy="92" rx="7" ry="14" fill="#e85c3a" opacity="0.22" transform="rotate(-15 156 92)"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">TRICEPS PRIMARY · CHEST</text>
@@ -681,26 +728,34 @@ const SVG = {
     <rect x="204" y="4" width="8" height="18" rx="2" fill="#2a2a38"/>
     <line x1="104" y1="20" x2="116" y2="20" stroke="#f5a623" stroke-width="2" opacity="0.7"/>
     <line x1="164" y1="20" x2="176" y2="20" stroke="#f5a623" stroke-width="2" opacity="0.7"/>
-    <circle cx="140" cy="70" r="9" fill="#9a9ab0"><animate attributeName="cy" values="70;46;70" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <line x1="140" y1="79" x2="140" y2="116" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="y1" values="79;55;79" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="116;92;116" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="130" y1="90" x2="104" y2="20" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="90;66;90" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="150" y1="90" x2="176" y2="20" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="90;66;90" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="136" y1="114" x2="126" y2="140" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="114;90;114" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="140;116;140" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="144" y1="114" x2="154" y2="140" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="114;90;114" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="140;116;140" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
+    <g><animateTransform attributeName="transform" type="translate" values="0,0;0,-24;0,0" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/>
+      <circle cx="140" cy="46" r="12" fill="#c4956a"/>
+      <path d="M122 58 L126 54 L154 54 L158 58 L158 88 Q140 94 122 88 Z" fill="#3a3a4f"/>
+      <rect x="108" y="56" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(-40 114 70)"/>
+      <rect x="160" y="56" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(40 166 70)"/>
+      <rect x="96" y="34" width="10" height="22" rx="5" fill="#c4956a" transform="rotate(-80 101 45)"/>
+      <rect x="174" y="34" width="10" height="22" rx="5" fill="#c4956a" transform="rotate(80 179 45)"/>
+      <rect x="124" y="88" width="14" height="34" rx="7" fill="#3a3a4f" transform="rotate(4 131 105)"/>
+      <rect x="142" y="88" width="14" height="34" rx="7" fill="#3a3a4f" transform="rotate(-4 149 105)"/>
+      <rect x="122" y="116" width="12" height="24" rx="6" fill="#c4956a"/>
+      <rect x="146" y="116" width="12" height="24" rx="6" fill="#c4956a"/>
+    </g>
     <ellipse cx="140" cy="70" rx="20" ry="28" fill="#f5a623" opacity="0.1"/>
     <text x="140" y="148" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">LATS · BICEPS · UPPER BACK</text>
   </svg>`,
 
   row:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="24" y="114" width="232" height="7" rx="3" fill="#4a4a5a"/>
-    <rect x="24" y="102" width="14" height="26" rx="2" fill="#f5a623" opacity="0.9"/>
-    <rect x="242" y="102" width="14" height="26" rx="2" fill="#f5a623" opacity="0.9"/>
-    <circle cx="116" cy="56" r="9" fill="#9a9ab0"/>
-    <line x1="116" y1="65" x2="130" y2="104" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="130" y1="104" x2="118" y2="132" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="130" y1="104" x2="142" y2="132" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="104" y1="74" x2="84" y2="114" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="114;84;114" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="128" y1="78" x2="148" y2="114" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="114;84;114" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
+    <rect x="24" y="102" width="14" height="26" rx="3" fill="#f5a623" opacity="0.9"/>
+    <rect x="242" y="102" width="14" height="26" rx="3" fill="#f5a623" opacity="0.9"/>
+    <circle cx="116" cy="50" r="12" fill="#c4956a"/>
+    <rect x="104" y="62" width="40" height="18" rx="5" fill="#3a3a4f" transform="rotate(30 124 71)"/>
+    <rect x="118" y="78" width="16" height="34" rx="8" fill="#3a3a4f" transform="rotate(-5 126 95)"/>
+    <rect x="138" y="78" width="16" height="34" rx="8" fill="#3a3a4f" transform="rotate(5 146 95)"/>
+    <rect x="116" y="106" width="12" height="24" rx="6" fill="#c4956a"/>
+    <rect x="144" y="106" width="12" height="24" rx="6" fill="#c4956a"/>
+    <rect x="96" y="64" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(30 102 78)"><animate attributeName="transform" type="rotate" values="30 102 78;60 102 78;30 102 78" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="128" y="68" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(-10 134 82)"><animate attributeName="transform" type="rotate" values="-10 134 82;30 134 82;-10 134 82" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <rect x="72" y="110" width="96" height="7" rx="3" fill="#4a4a5a"><animate attributeName="y" values="110;82;110" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <ellipse cx="122" cy="80" rx="22" ry="18" fill="#f5a623" opacity="0.12" transform="rotate(-40 122 80)"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">MID BACK · LATS · BICEPS</text>
@@ -711,14 +766,16 @@ const SVG = {
     <circle cx="34" cy="64" r="10" fill="#2a2a38"/>
     <rect x="84" y="120" width="80" height="10" rx="3" fill="#2a2a38"/>
     <line x1="44" y1="64" x2="116" y2="84" stroke="#4a4a5a" stroke-width="2" stroke-dasharray="3 2" opacity="0.7"/>
-    <circle cx="140" cy="72" r="9" fill="#9a9ab0"/>
-    <rect x="116" y="76" width="48" height="12" rx="3" fill="#7a7a9a"/>
-    <line x1="126" y1="88" x2="118" y2="120" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="154" y1="88" x2="162" y2="120" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="110" y1="120" x2="106" y2="132" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="170" y1="120" x2="174" y2="132" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="116" y1="82" x2="78" y2="88" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="78;112;78" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="88;82;88" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="164" y1="82" x2="126" y2="88" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="126;158;126" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="88;82;88" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
+    <circle cx="140" cy="60" r="12" fill="#c4956a"/>
+    <rect x="116" y="72" width="48" height="16" rx="5" fill="#3a3a4f"/>
+    <rect x="124" y="86" width="14" height="32" rx="7" fill="#3a3a4f"/>
+    <rect x="142" y="86" width="14" height="32" rx="7" fill="#3a3a4f"/>
+    <rect x="108" y="118" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="156" y="118" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="122" y="112" width="12" height="20" rx="6" fill="#c4956a"/>
+    <rect x="146" y="112" width="12" height="20" rx="6" fill="#c4956a"/>
+    <rect x="108" y="74" width="12" height="26" rx="6" fill="#c4956a" transform="rotate(10 114 87)"><animate attributeName="transform" type="rotate" values="10 114 87;40 114 87;10 114 87" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="160" y="74" width="12" height="26" rx="6" fill="#c4956a" transform="rotate(-10 166 87)"><animate attributeName="transform" type="rotate" values="-10 166 87;-40 166 87;-10 166 87" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <rect x="74" y="84" width="14" height="7" rx="2" fill="#f5a623" opacity="0.9"><animate attributeName="x" values="74;106;74" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <ellipse cx="140" cy="84" rx="18" ry="12" fill="#f5a623" opacity="0.15"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">MID BACK · RHOMBOIDS</text>
@@ -728,52 +785,64 @@ const SVG = {
     <rect x="228" y="18" width="26" height="118" rx="4" fill="#1e1e2a" stroke="#2a2a38" stroke-width="1"/>
     <circle cx="241" cy="68" r="10" fill="#2a2a38"/>
     <line x1="231" y1="68" x2="174" y2="74" stroke="#4a4a5a" stroke-width="2" stroke-dasharray="3 2" opacity="0.7"/>
-    <circle cx="140" cy="72" r="9" fill="#9a9ab0"/>
-    <line x1="140" y1="81" x2="140" y2="116" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="140" y1="116" x2="126" y2="136" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="140" y1="116" x2="154" y2="136" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="130" y1="88" x2="172" y2="68" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="172;148;172" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="68;76;68" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="150" y1="90" x2="172" y2="82" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="172;148;172" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="82;88;82" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <circle cx="174" cy="68" r="6" fill="#f5a623" opacity="0.9"><animate attributeName="cx" values="174;150;174" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="68;76;68" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <circle cx="174" cy="82" r="6" fill="#f5a623" opacity="0.9"><animate attributeName="cx" values="174;150;174" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="82;88;82" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <ellipse cx="132" cy="88" rx="12" ry="9" fill="#f5a623" opacity="0.2"/>
-    <ellipse cx="148" cy="88" rx="12" ry="9" fill="#f5a623" opacity="0.2"/>
+    <circle cx="140" cy="36" r="12" fill="#c4956a"/>
+    <path d="M122 48 L126 44 L154 44 L158 48 L156 78 Q140 82 124 78 Z" fill="#3a3a4f"/>
+    <rect x="126" y="78" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(4 133 94)"/>
+    <rect x="140" y="78" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(-4 147 94)"/>
+    <rect x="124" y="104" width="12" height="24" rx="6" fill="#c4956a"/>
+    <rect x="144" y="104" width="12" height="24" rx="6" fill="#c4956a"/>
+    <rect x="122" y="124" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="142" y="124" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="114" y="50" width="12" height="26" rx="6" fill="#c4956a" transform="rotate(-30 120 63)"><animate attributeName="transform" type="rotate" values="-30 120 63;-60 120 63;-30 120 63" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="154" y="50" width="12" height="26" rx="6" fill="#c4956a" transform="rotate(30 160 63)"><animate attributeName="transform" type="rotate" values="30 160 63;60 160 63;30 160 63" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <circle cx="174" cy="68" r="6" fill="#f5a623" opacity="0.9"><animate attributeName="cx" values="174;150;174" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="68;56;68" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
+    <circle cx="174" cy="82" r="6" fill="#f5a623" opacity="0.9"><animate attributeName="cx" values="174;150;174" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="82;70;82" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
+    <ellipse cx="132" cy="58" rx="12" ry="9" fill="#f5a623" opacity="0.2"/>
+    <ellipse cx="148" cy="58" rx="12" ry="9" fill="#f5a623" opacity="0.2"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">REAR DELTS · ROTATOR CUFF</text>
   </svg>`,
 
   curl:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="140" cy="48" r="9" fill="#9a9ab0"/>
-    <line x1="140" y1="57" x2="140" y2="94" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="140" y1="94" x2="126" y2="118" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="140" y1="94" x2="154" y2="118" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="130" y1="70" x2="112" y2="80" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="150" y1="70" x2="168" y2="80" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="112" y1="80" x2="106" y2="118" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="118;68;118" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="x2" values="106;108;106" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="168" y1="80" x2="174" y2="118" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="118;68;118" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="x2" values="174;172;174" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <rect x="94" y="114" width="96" height="7" rx="3" fill="#4a4a5a"><animate attributeName="y" values="114;64;114" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="88" y="103" width="12" height="26" rx="2" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="103;53;103" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="188" y="103" width="12" height="26" rx="2" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="103;53;103" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <ellipse cx="110" cy="96" rx="9" ry="14" fill="#f5a623" opacity="0.22" transform="rotate(-12 110 96)"/>
-    <ellipse cx="170" cy="96" rx="9" ry="14" fill="#f5a623" opacity="0.22" transform="rotate(12 170 96)"/>
+    <circle cx="140" cy="22" r="12" fill="#c4956a"/>
+    <path d="M122 34 L126 30 L154 30 L158 34 L156 64 Q140 68 124 64 Z" fill="#3a3a4f"/>
+    <rect x="126" y="64" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(4 133 80)"/>
+    <rect x="140" y="64" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(-4 147 80)"/>
+    <rect x="124" y="90" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="144" y="90" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="122" y="112" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="142" y="112" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="108" y="38" width="12" height="28" rx="6" fill="#c4956a"/>
+    <rect x="160" y="38" width="12" height="28" rx="6" fill="#c4956a"/>
+    <rect x="96" y="60" width="10" height="24" rx="5" fill="#c4956a"><animate attributeName="transform" type="rotate" values="0 101 72;-120 101 72;0 101 72" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="174" y="60" width="10" height="24" rx="5" fill="#c4956a"><animate attributeName="transform" type="rotate" values="0 179 72;120 179 72;0 179 72" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="82" y="80" width="96" height="8" rx="4" fill="#4a4a5a"><animate attributeName="y" values="80;40;80" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="76" y="70" width="14" height="28" rx="3" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="70;30;70" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="190" y="70" width="14" height="28" rx="3" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="70;30;70" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <ellipse cx="110" cy="52" rx="9" ry="14" fill="#f5a623" opacity="0.22" transform="rotate(-12 110 52)"/>
+    <ellipse cx="170" cy="52" rx="9" ry="14" fill="#f5a623" opacity="0.22" transform="rotate(12 170 52)"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">BICEPS PEAK · NO SWINGING</text>
   </svg>`,
 
   hammer:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="140" cy="48" r="9" fill="#9a9ab0"/>
-    <line x1="140" y1="57" x2="140" y2="94" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="140" y1="94" x2="126" y2="118" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="140" y1="94" x2="154" y2="118" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="130" y1="70" x2="110" y2="80" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="150" y1="70" x2="170" y2="80" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="110" y1="80" x2="104" y2="120" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="120;68;120" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="170" y1="80" x2="176" y2="120" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y2" values="120;68;120" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <rect x="98" y="112" width="8" height="22" rx="2" fill="#4a4a5a"><animate attributeName="y" values="112;60;112" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="94" y="112" width="16" height="7" rx="2" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="112;60;112" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="94" y="128" width="16" height="7" rx="2" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="128;76;128" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="178" y="112" width="8" height="22" rx="2" fill="#4a4a5a"><animate attributeName="y" values="112;60;112" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="174" y="112" width="16" height="7" rx="2" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="112;60;112" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <ellipse cx="106" cy="96" rx="7" ry="13" fill="#f5a623" opacity="0.25" transform="rotate(-12 106 96)"/>
-    <text x="122" y="40" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#f5a623" opacity="0.7">NEUTRAL</text>
+    <circle cx="140" cy="22" r="12" fill="#c4956a"/>
+    <path d="M122 34 L126 30 L154 30 L158 34 L156 64 Q140 68 124 64 Z" fill="#3a3a4f"/>
+    <rect x="126" y="64" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(4 133 80)"/>
+    <rect x="140" y="64" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(-4 147 80)"/>
+    <rect x="124" y="90" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="144" y="90" width="12" height="26" rx="6" fill="#c4956a"/>
+    <rect x="122" y="112" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="142" y="112" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="108" y="38" width="12" height="28" rx="6" fill="#c4956a"/>
+    <rect x="160" y="38" width="12" height="28" rx="6" fill="#c4956a"/>
+    <rect x="96" y="60" width="10" height="24" rx="5" fill="#c4956a"><animate attributeName="transform" type="rotate" values="0 101 72;-120 101 72;0 101 72" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="174" y="60" width="10" height="24" rx="5" fill="#c4956a"><animate attributeName="transform" type="rotate" values="0 179 72;120 179 72;0 179 72" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="90" y="78" width="8" height="22" rx="2" fill="#4a4a5a"><animate attributeName="y" values="78;36;78" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="86" y="78" width="16" height="7" rx="2" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="78;36;78" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="86" y="94" width="16" height="7" rx="2" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="94;52;94" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="182" y="78" width="8" height="22" rx="2" fill="#4a4a5a"><animate attributeName="y" values="78;36;78" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="178" y="78" width="16" height="7" rx="2" fill="#f5a623" opacity="0.9"><animate attributeName="y" values="78;36;78" dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <ellipse cx="106" cy="52" rx="7" ry="13" fill="#f5a623" opacity="0.25" transform="rotate(-12 106 52)"/>
+    <text x="122" y="16" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#f5a623" opacity="0.7">NEUTRAL</text>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">BRACHIALIS · FOREARMS</text>
   </svg>`,
 
@@ -784,31 +853,41 @@ const SVG = {
     <rect x="66" y="40" width="16" height="6" rx="2" fill="#2a2a38"/>
     <rect x="198" y="40" width="16" height="6" rx="2" fill="#2a2a38"/>
     <g><animateTransform attributeName="transform" type="translate" values="0,0;0,18;0,0" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/>
-      <rect x="56" y="48" width="12" height="28" rx="2" fill="#4ecdc4" opacity="0.9"/>
-      <rect x="212" y="48" width="12" height="28" rx="2" fill="#4ecdc4" opacity="0.9"/>
-      <rect x="56" y="60" width="168" height="7" rx="3" fill="#4a4a5a"/>
-      <circle cx="140" cy="36" r="9" fill="#9a9ab0"/>
-      <line x1="140" y1="45" x2="140" y2="64" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
+      <rect x="56" y="48" width="14" height="28" rx="3" fill="#4ecdc4" opacity="0.9"/>
+      <rect x="210" y="48" width="14" height="28" rx="3" fill="#4ecdc4" opacity="0.9"/>
+      <rect x="56" y="60" width="168" height="8" rx="4" fill="#4a4a5a"/>
+      <circle cx="140" cy="30" r="12" fill="#c4956a"/>
+      <path d="M122 42 L126 38 L154 38 L158 42 L156 64 Q140 68 124 64 Z" fill="#3a3a4f"/>
+      <rect x="108" y="44" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(-20 114 56)"/>
+      <rect x="160" y="44" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(20 166 56)"/>
     </g>
-    <line x1="130" y1="64" x2="112" y2="96" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="y1" values="64;82;64" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="x2" values="124;112;124" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="90;96;90" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="150" y1="64" x2="168" y2="96" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="y1" values="64;82;64" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="x2" values="156;168;156" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="90;96;90" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="112" y1="96" x2="108" y2="132" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x1" values="124;112;124" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y1" values="90;96;90" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="168" y1="96" x2="172" y2="132" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x1" values="156;168;156" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y1" values="90;96;90" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
+    <rect x="118" y="64" width="16" height="36" rx="8" fill="#3a3a4f"><animate attributeName="y" values="64;82;64" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="height" values="36;28;36" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="146" y="64" width="16" height="36" rx="8" fill="#3a3a4f"><animate attributeName="y" values="64;82;64" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="height" values="36;28;36" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="114" y="96" width="14" height="28" rx="7" fill="#c4956a"/>
+    <rect x="152" y="96" width="14" height="28" rx="7" fill="#c4956a"/>
+    <rect x="112" y="120" width="18" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="150" y="120" width="18" height="8" rx="3" fill="#e8e8f0"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">QUADS · GLUTES · HAMSTRINGS</text>
   </svg>`,
 
   rdl:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="24" y="114" width="232" height="7" rx="3" fill="#4a4a5a"/>
-    <rect x="24" y="102" width="14" height="26" rx="2" fill="#4ecdc4" opacity="0.9"><animate attributeName="y" values="102;80;102" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="242" y="102" width="14" height="26" rx="2" fill="#4ecdc4" opacity="0.9"><animate attributeName="y" values="102;80;102" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="24" y="102" width="14" height="26" rx="3" fill="#4ecdc4" opacity="0.9"><animate attributeName="y" values="102;80;102" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="242" y="102" width="14" height="26" rx="3" fill="#4ecdc4" opacity="0.9"><animate attributeName="y" values="102;80;102" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <rect x="24" y="114" width="232" height="7" rx="3" fill="#4a4a5a"><animate attributeName="y" values="114;92;114" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <circle cx="108" cy="44" r="9" fill="#9a9ab0"><animate attributeName="cx" values="108;140;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="44;28;44" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <line x1="108" y1="53" x2="130" y2="108" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="x1" values="108;140;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y1" values="53;37;53" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="108;92;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="100" y1="62" x2="76" y2="114" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="76;84;76" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="114;92;114" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="128" y1="68" x2="152" y2="114" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="152;180;152" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="114;92;114" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="130" y1="108" x2="122" y2="136" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="130" y1="108" x2="138" y2="136" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <ellipse cx="130" cy="116" rx="8" ry="20" fill="#4ecdc4" opacity="0.2"/>
+    <g><animateTransform attributeName="transform" type="rotate" values="0 140 108;-40 140 108;0 140 108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/>
+      <circle cx="140" cy="50" r="12" fill="#c4956a"/>
+      <path d="M122 62 L126 58 L154 58 L158 62 L156 90 Q140 94 124 90 Z" fill="#3a3a4f"/>
+      <rect x="108" y="64" width="12" height="26" rx="6" fill="#c4956a" transform="rotate(-10 114 77)"/>
+      <rect x="160" y="64" width="12" height="26" rx="6" fill="#c4956a" transform="rotate(10 166 77)"/>
+      <rect x="96" y="84" width="10" height="22" rx="5" fill="#c4956a"/>
+      <rect x="174" y="84" width="10" height="22" rx="5" fill="#c4956a"/>
+    </g>
+    <rect x="120" y="88" width="16" height="34" rx="8" fill="#3a3a4f" transform="rotate(-5 128 105)"/>
+    <rect x="144" y="88" width="16" height="34" rx="8" fill="#3a3a4f" transform="rotate(5 152 105)"/>
+    <rect x="118" y="116" width="14" height="22" rx="7" fill="#c4956a"/>
+    <rect x="148" y="116" width="14" height="22" rx="7" fill="#c4956a"/>
+    <ellipse cx="130" cy="108" rx="8" ry="20" fill="#4ecdc4" opacity="0.2"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">HAMSTRINGS · GLUTES</text>
   </svg>`,
 
@@ -817,25 +896,30 @@ const SVG = {
     <rect x="204" y="52" width="40" height="72" rx="3" fill="#1e1e2a"/>
     <rect x="24" y="48" width="52" height="78" rx="3" fill="#1e1e2a"/>
     <ellipse cx="110" cy="100" rx="52" ry="11" fill="#3a3a50"/>
-    <circle cx="58" cy="92" r="11" fill="#7a7a9a"/>
-    <line x1="74" y1="98" x2="130" y2="78" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="x2" values="130;156;130" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="78;62;78" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="74" y1="106" x2="130" y2="118" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="x2" values="130;156;130" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="118;126;118" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <rect x="124" y="70" width="20" height="10" rx="2" fill="#7a7a9a"><animate attributeName="x" values="124;150;124" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y" values="70;54;70" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
-    <rect x="124" y="112" width="20" height="10" rx="2" fill="#7a7a9a"><animate attributeName="x" values="124;150;124" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y" values="112;122;112" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <circle cx="58" cy="86" r="12" fill="#c4956a"/>
+    <rect x="46" y="90" width="36" height="14" rx="5" fill="#3a3a4f"/>
+    <rect x="62" y="82" width="16" height="30" rx="8" fill="#3a3a4f"><animate attributeName="width" values="16;12;16" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="62" y="96" width="16" height="30" rx="8" fill="#3a3a4f"><animate attributeName="width" values="16;12;16" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="124" y="70" width="20" height="12" rx="4" fill="#c4956a"><animate attributeName="x" values="124;150;124" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y" values="70;54;70" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="124" y="112" width="20" height="12" rx="4" fill="#c4956a"><animate attributeName="x" values="124;150;124" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y" values="112;122;112" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="140" y="62" width="14" height="8" rx="3" fill="#e8e8f0"><animate attributeName="x" values="140;166;140" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="140" y="120" width="14" height="8" rx="3" fill="#e8e8f0"><animate attributeName="x" values="140;166;140" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <ellipse cx="102" cy="88" rx="18" ry="9" fill="#4ecdc4" opacity="0.2" transform="rotate(-25 102 88)"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">QUADS · GLUTES</text>
   </svg>`,
 
   lunge:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="148" cy="40" r="9" fill="#9a9ab0"/>
-    <line x1="148" y1="49" x2="148" y2="80" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="140" y1="62" x2="124" y2="72" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="156" y1="62" x2="172" y2="72" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="140" y1="80" x2="112" y2="108" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="x2" values="112;118;112" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="108;100;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="156" y1="80" x2="168" y2="106" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="y2" values="106;96;106" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="112" y1="108" x2="104" y2="136" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x1" values="112;118;112" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y1" values="108;100;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <circle cx="168" cy="108" r="6" fill="#7a7a9a"><animate attributeName="cy" values="108;98;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <ellipse cx="130" cy="104" rx="16" ry="10" fill="#4ecdc4" opacity="0.2" transform="rotate(20 130 104)"/>
+    <circle cx="148" cy="20" r="12" fill="#c4956a"/>
+    <path d="M130 32 L134 28 L162 28 L166 32 L164 60 Q148 64 132 60 Z" fill="#3a3a4f"/>
+    <rect x="136" y="34" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(-15 142 46)"/>
+    <rect x="152" y="34" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(15 158 46)"/>
+    <rect x="128" y="58" width="16" height="36" rx="8" fill="#3a3a4f" transform="rotate(30 136 76)"><animate attributeName="transform" type="rotate" values="30 136 76;25 136 76;30 136 76" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="148" y="58" width="16" height="36" rx="8" fill="#3a3a4f" transform="rotate(-20 156 76)"><animate attributeName="transform" type="rotate" values="-20 156 76;-15 156 76;-20 156 76" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="110" y="86" width="14" height="30" rx="7" fill="#c4956a" transform="rotate(-10 117 101)"/>
+    <rect x="162" y="82" width="14" height="30" rx="7" fill="#c4956a" transform="rotate(10 169 97)"/>
+    <rect x="104" y="112" width="18" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="164" y="108" width="18" height="8" rx="3" fill="#e8e8f0"/>
+    <ellipse cx="130" cy="80" rx="16" ry="10" fill="#4ecdc4" opacity="0.2" transform="rotate(20 130 80)"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">GLUTES · QUADS · BALANCE</text>
   </svg>`,
 
@@ -843,27 +927,31 @@ const SVG = {
     <rect x="24" y="72" width="232" height="36" rx="5" fill="#14141e" stroke="#2a2a38" stroke-width="1.5"/>
     <rect x="222" y="62" width="20" height="52" rx="3" fill="#1e1e2a"/>
     <ellipse cx="136" cy="82" rx="74" ry="12" fill="#3a3a50"/>
-    <circle cx="58" cy="76" r="11" fill="#7a7a9a"/>
-    <line x1="130" y1="78" x2="186" y2="72" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="186" y1="72" x2="206" y2="52" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="x2" values="206;198;206" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="52;80;52" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
+    <circle cx="70" cy="72" r="12" fill="#c4956a"/>
+    <rect x="80" y="72" width="80" height="16" rx="5" fill="#3a3a4f"/>
+    <rect x="156" y="72" width="36" height="14" rx="5" fill="#3a3a4f"/>
+    <rect x="160" y="68" width="16" height="32" rx="8" fill="#c4956a"/>
+    <rect x="188" y="52" width="14" height="28" rx="7" fill="#c4956a"><animate attributeName="transform" type="rotate" values="0 195 66;-90 195 66;0 195 66" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <rect x="196" y="44" width="28" height="10" rx="3" fill="#4ecdc4" opacity="0.9"><animate attributeName="y" values="44;72;44" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
     <ellipse cx="160" cy="74" rx="24" ry="7" fill="#4ecdc4" opacity="0.2"/>
     <text x="140" y="122" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">HAMSTRINGS ISOLATED</text>
   </svg>`,
 
   calfraise:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="90" y="118" width="100" height="12" rx="3" fill="#1e1e2a"/>
+    <rect x="90" y="118" width="100" height="14" rx="4" fill="#1e1e2a"/>
     <rect x="70" y="116" width="140" height="6" rx="2" fill="#252535"/>
     <g><animateTransform attributeName="transform" type="translate" values="0,0;0,-12;0,0" dur="1.6s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/>
-      <circle cx="140" cy="40" r="9" fill="#9a9ab0"/>
-      <line x1="140" y1="49" x2="140" y2="82" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-      <line x1="140" y1="60" x2="120" y2="72" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-      <line x1="140" y1="60" x2="160" y2="72" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-      <line x1="134" y1="80" x2="128" y2="116" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-      <line x1="146" y1="80" x2="152" y2="116" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="140" cy="18" r="12" fill="#c4956a"/>
+      <path d="M122 30 L126 26 L154 26 L158 30 L156 58 Q140 62 124 58 Z" fill="#3a3a4f"/>
+      <rect x="110" y="32" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(-15 116 44)"/>
+      <rect x="158" y="32" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(15 164 44)"/>
+      <rect x="126" y="58" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(4 133 74)"/>
+      <rect x="140" y="58" width="14" height="32" rx="7" fill="#3a3a4f" transform="rotate(-4 147 74)"/>
+      <rect x="124" y="84" width="14" height="28" rx="7" fill="#c4956a"/>
+      <rect x="142" y="84" width="14" height="28" rx="7" fill="#c4956a"/>
     </g>
-    <ellipse cx="130" cy="118" rx="8" ry="4" fill="#7a7a9a"/>
-    <ellipse cx="152" cy="118" rx="8" ry="4" fill="#7a7a9a"/>
+    <rect x="122" y="116" width="16" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="142" y="116" width="16" height="8" rx="3" fill="#e8e8f0"/>
     <ellipse cx="130" cy="96" rx="7" ry="14" fill="#4ecdc4" opacity="0.3"/>
     <ellipse cx="150" cy="96" rx="7" ry="14" fill="#4ecdc4" opacity="0.3"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">GASTROCNEMIUS · SOLEUS</text>
@@ -871,116 +959,129 @@ const SVG = {
 
   // FULL BODY ──────────────────────────────────────────────
   deadlift:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="24" y="114" width="232" height="7" rx="3" fill="#4a4a5a"/>
-    <circle cx="60" cy="117" r="20" fill="none" stroke="#a78bfa" stroke-width="6" opacity="0.9"/>
-    <circle cx="220" cy="117" r="20" fill="none" stroke="#a78bfa" stroke-width="6" opacity="0.9"/>
-    <circle cx="140" cy="40" r="9" fill="#9a9ab0"><animate attributeName="cy" values="60;40;60" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <line x1="140" y1="49" x2="140" y2="84" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="y1" values="69;49;69" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="132" y1="62" x2="110" y2="74" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="80;62;80" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="96;74;96" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="148" y1="62" x2="170" y2="74" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="80;62;80" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="96;74;96" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="110" y1="74" x2="106" y2="114" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="96;74;96" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="170" y1="74" x2="174" y2="114" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="96;74;96" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="130" y1="76" x2="102" y2="114" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="94;76;94" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="150" y1="76" x2="178" y2="114" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="y1" values="94;76;94" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
+    <rect x="24" y="120" width="232" height="7" rx="3" fill="#4a4a5a"/>
+    <circle cx="60" cy="123" r="20" fill="none" stroke="#a78bfa" stroke-width="6" opacity="0.9"/>
+    <circle cx="220" cy="123" r="20" fill="none" stroke="#a78bfa" stroke-width="6" opacity="0.9"/>
+    <g><animateTransform attributeName="transform" type="rotate" values="30 140 120;0 140 120;30 140 120" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/>
+      <circle cx="140" cy="38" r="12" fill="#c4956a"/>
+      <path d="M122 50 L126 46 L154 46 L158 50 L156 80 Q140 84 124 80 Z" fill="#3a3a4f"/>
+      <rect x="108" y="52" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(-10 114 66)"/>
+      <rect x="160" y="52" width="12" height="28" rx="6" fill="#c4956a" transform="rotate(10 166 66)"/>
+      <rect x="96" y="74" width="10" height="22" rx="5" fill="#c4956a"/>
+      <rect x="174" y="74" width="10" height="22" rx="5" fill="#c4956a"/>
+    </g>
+    <rect x="118" y="80" width="16" height="36" rx="8" fill="#3a3a4f"><animate attributeName="y" values="80;70;80" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="146" y="80" width="16" height="36" rx="8" fill="#3a3a4f"><animate attributeName="y" values="80;70;80" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="116" y="110" width="14" height="24" rx="7" fill="#c4956a"/>
+    <rect x="150" y="110" width="14" height="24" rx="7" fill="#c4956a"/>
+    <rect x="114" y="128" width="18" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="148" y="128" width="18" height="8" rx="3" fill="#e8e8f0"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">FULL POSTERIOR CHAIN</text>
   </svg>`,
 
   dbbench:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="50" y="98" width="180" height="8" rx="3" fill="#252535"/>
-    <rect x="65" y="106" width="10" height="25" rx="2" fill="#252535"/>
-    <rect x="205" y="106" width="10" height="25" rx="2" fill="#252535"/>
-    <circle cx="140" cy="91" r="9" fill="#9a9ab0"/>
-    <rect x="108" y="93" width="64" height="9" rx="3" fill="#7a7a9a"/>
-    <line x1="115" y1="101" x2="103" y2="126" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="165" y1="101" x2="177" y2="126" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="116" y1="97" x2="94" y2="62" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="94;116;94" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="62;80;62" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="164" y1="97" x2="186" y2="62" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="186;164;186" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="62;80;62" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <circle cx="92" cy="57" r="9" fill="none" stroke="#a78bfa" stroke-width="3" opacity="0.9"><animate attributeName="cx" values="92;116;92" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="57;78;57" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <circle cx="188" cy="57" r="9" fill="none" stroke="#a78bfa" stroke-width="3" opacity="0.9"><animate attributeName="cx" values="188;164;188" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="57;78;57" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
-    <ellipse cx="140" cy="97" rx="32" ry="7" fill="#a78bfa" opacity="0.15"/>
+    <rect x="50" y="94" width="180" height="10" rx="4" fill="#252535"/>
+    <rect x="65" y="104" width="12" height="28" rx="3" fill="#252535"/>
+    <rect x="203" y="104" width="12" height="28" rx="3" fill="#252535"/>
+    <circle cx="140" cy="87" r="12" fill="#c4956a"/>
+    <rect x="118" y="88" width="44" height="14" rx="5" fill="#3a3a4f"/>
+    <rect x="113" y="100" width="14" height="30" rx="7" fill="#3a3a4f" transform="rotate(20 120 100)"/>
+    <rect x="153" y="100" width="14" height="30" rx="7" fill="#3a3a4f" transform="rotate(-20 160 100)"/>
+    <rect x="103" y="122" width="11" height="20" rx="5" fill="#c4956a"/>
+    <rect x="166" y="122" width="11" height="20" rx="5" fill="#c4956a"/>
+    <rect x="104" y="80" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(-15 110 92)"><animate attributeName="transform" type="rotate" values="-15 110 92;5 110 92;-15 110 92" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="164" y="80" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(15 170 92)"><animate attributeName="transform" type="rotate" values="15 170 92;-5 170 92;15 170 92" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <circle cx="92" cy="57" r="9" fill="#a78bfa" opacity="0.9"><animate attributeName="cx" values="92;116;92" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="57;78;57" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
+    <circle cx="188" cy="57" r="9" fill="#a78bfa" opacity="0.9"><animate attributeName="cx" values="188;164;188" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="cy" values="57;78;57" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></circle>
+    <ellipse cx="140" cy="92" rx="32" ry="7" fill="#a78bfa" opacity="0.15"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">CHEST · TRICEPS · DELTS</text>
   </svg>`,
 
   goblet:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g><animateTransform attributeName="transform" type="translate" values="0,0;0,16;0,0" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/>
-      <circle cx="140" cy="38" r="9" fill="#9a9ab0"/>
-      <line x1="140" y1="47" x2="140" y2="70" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-      <rect x="128" y="44" width="24" height="18" rx="2" fill="#3a3a50"/>
-      <rect x="124" y="44" width="32" height="7" rx="2" fill="#a78bfa" opacity="0.9"/>
-      <rect x="124" y="56" width="32" height="7" rx="2" fill="#a78bfa" opacity="0.9"/>
-      <line x1="136" y1="46" x2="126" y2="54" stroke="#d8d8f0" stroke-width="3" stroke-linecap="round"/>
-      <line x1="144" y1="46" x2="154" y2="54" stroke="#d8d8f0" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="140" cy="18" r="12" fill="#c4956a"/>
+      <path d="M122 30 L126 26 L154 26 L158 30 L156 58 Q140 62 124 58 Z" fill="#3a3a4f"/>
+      <rect x="128" y="30" width="24" height="18" rx="4" fill="#3a3a50"/>
+      <rect x="124" y="30" width="32" height="7" rx="2" fill="#a78bfa" opacity="0.9"/>
+      <rect x="124" y="42" width="32" height="7" rx="2" fill="#a78bfa" opacity="0.9"/>
+      <rect x="112" y="32" width="12" height="22" rx="6" fill="#c4956a" transform="rotate(20 118 43)"/>
+      <rect x="156" y="32" width="12" height="22" rx="6" fill="#c4956a" transform="rotate(-20 162 43)"/>
     </g>
-    <line x1="130" y1="70" x2="106" y2="108" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="y1" values="70;86;70" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="x2" values="106;100;106" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="108;112;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="150" y1="70" x2="174" y2="108" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="y1" values="70;86;70" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="x2" values="174;180;174" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="108;112;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="106" y1="108" x2="100" y2="136" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x1" values="106;100;106" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y1" values="108;112;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="174" y1="108" x2="180" y2="136" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x1" values="174;180;174" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y1" values="108;112;108" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <ellipse cx="118" cy="110" rx="16" ry="9" fill="#a78bfa" opacity="0.18" transform="rotate(20 118 110)"/>
-    <ellipse cx="162" cy="110" rx="16" ry="9" fill="#a78bfa" opacity="0.18" transform="rotate(-20 162 110)"/>
+    <rect x="118" y="58" width="16" height="36" rx="8" fill="#3a3a4f"><animate attributeName="y" values="58;74;58" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="height" values="36;28;36" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="146" y="58" width="16" height="36" rx="8" fill="#3a3a4f"><animate attributeName="y" values="58;74;58" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="height" values="36;28;36" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="114" y="90" width="14" height="30" rx="7" fill="#c4956a"/>
+    <rect x="152" y="90" width="14" height="30" rx="7" fill="#c4956a"/>
+    <rect x="112" y="116" width="18" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="150" y="116" width="18" height="8" rx="3" fill="#e8e8f0"/>
+    <ellipse cx="118" cy="84" rx="16" ry="9" fill="#a78bfa" opacity="0.18" transform="rotate(20 118 84)"/>
+    <ellipse cx="162" cy="84" rx="16" ry="9" fill="#a78bfa" opacity="0.18" transform="rotate(-20 162 84)"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">QUADS · GLUTES · CORE</text>
   </svg>`,
 
   plank:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="70" cy="72" r="9" fill="#9a9ab0"/>
-    <line x1="70" y1="81" x2="220" y2="90" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="y1" values="81;79;81" dur="3s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="90;88;90" dur="3s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="80" y1="88" x2="78" y2="114" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="188" y1="93" x2="192" y2="118" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="78" y1="114" x2="64" y2="120" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <line x1="192" y1="118" x2="208" y2="118" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"/>
-    <ellipse cx="140" cy="87" rx="48" ry="8" fill="#a78bfa" opacity="0.12"><animate attributeName="ry" values="8;6;8" dur="3s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></ellipse>
+    <circle cx="70" cy="66" r="12" fill="#c4956a"/>
+    <rect x="78" y="72" width="120" height="16" rx="6" fill="#3a3a4f"><animate attributeName="y" values="72;70;72" dur="3s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="74" y="86" width="12" height="26" rx="6" fill="#c4956a" transform="rotate(5 80 99)"/>
+    <rect x="62" y="106" width="10" height="18" rx="5" fill="#c4956a"/>
+    <rect x="186" y="80" width="16" height="32" rx="8" fill="#3a3a4f" transform="rotate(-10 194 96)"/>
+    <rect x="194" y="84" width="16" height="32" rx="8" fill="#3a3a4f" transform="rotate(10 202 100)"/>
+    <rect x="186" y="108" width="14" height="18" rx="7" fill="#c4956a"/>
+    <rect x="206" y="110" width="14" height="18" rx="7" fill="#c4956a"/>
+    <rect x="184" y="122" width="18" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="204" y="124" width="18" height="8" rx="3" fill="#e8e8f0"/>
+    <ellipse cx="140" cy="82" rx="48" ry="8" fill="#a78bfa" opacity="0.12"><animate attributeName="ry" values="8;6;8" dur="3s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></ellipse>
     <text x="140" y="40" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#a78bfa" opacity="0.8">PLANK 45s · LEG RAISES ×15 · CRUNCHES ×20</text>
     <text x="140" y="52" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#6a6a7a">3 ROUNDS · 30s REST BETWEEN</text>
-    <text x="140" y="133" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">ABS · OBLIQUES · CORE</text>
+    <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">ABS · OBLIQUES · CORE</text>
   </svg>`,
 
   walk:`<svg viewBox="0 0 280 148" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="24" y="108" width="232" height="24" rx="4" fill="#1e1e2a" transform="rotate(-8 24 108)"/>
     <text x="100" y="128" font-family="JetBrains Mono" font-size="8" fill="#a78bfa" opacity="0.6">10-12% INCLINE · 5-6 KM/H</text>
-    <circle cx="160" cy="44" r="9" fill="#9a9ab0"/>
-    <line x1="160" y1="53" x2="155" y2="86" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"/>
-    <line x1="155" y1="62" x2="136" y2="72" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="136;156;136" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="72;78;72" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="155" y1="70" x2="174" y2="78" stroke="#d8d8f0" stroke-width="4" stroke-linecap="round"><animate attributeName="x2" values="174;154;174" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="78;72;78" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="148" y1="84" x2="134" y2="108" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="x2" values="134;148;134" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="108;96;108" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="162" y1="84" x2="176" y2="100" stroke="#d8d8f0" stroke-width="5" stroke-linecap="round"><animate attributeName="x2" values="176;162;176" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y2" values="100;112;100" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="134" y1="108" x2="122" y2="118" stroke="#d8d8f0" stroke-width="3" stroke-linecap="round"><animate attributeName="x1" values="134;148;134" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y1" values="108;96;108" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
-    <line x1="176" y1="100" x2="188" y2="112" stroke="#d8d8f0" stroke-width="3" stroke-linecap="round"><animate attributeName="x1" values="176;162;176" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/><animate attributeName="y1" values="100;112;100" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></line>
+    <circle cx="160" cy="30" r="12" fill="#c4956a"/>
+    <path d="M142 42 L146 38 L174 38 L178 42 L176 68 Q160 72 144 68 Z" fill="#3a3a4f"/>
+    <rect x="144" y="44" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(-20 150 56)"><animate attributeName="transform" type="rotate" values="-20 150 56;20 150 56;-20 150 56" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="164" y="44" width="12" height="24" rx="6" fill="#c4956a" transform="rotate(20 170 56)"><animate attributeName="transform" type="rotate" values="20 170 56;-20 170 56;20 170 56" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="140" y="66" width="16" height="32" rx="8" fill="#3a3a4f" transform="rotate(15 148 82)"><animate attributeName="transform" type="rotate" values="15 148 82;-15 148 82;15 148 82" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="156" y="66" width="16" height="32" rx="8" fill="#3a3a4f" transform="rotate(-15 164 82)"><animate attributeName="transform" type="rotate" values="-15 164 82;15 164 82;-15 164 82" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="134" y="92" width="14" height="24" rx="7" fill="#c4956a"><animate attributeName="transform" type="rotate" values="10 141 104;-10 141 104;10 141 104" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="162" y="92" width="14" height="24" rx="7" fill="#c4956a"><animate attributeName="transform" type="rotate" values="-10 169 104;10 169 104;-10 169 104" dur="1.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".4 0 .6 1;.4 0 .6 1"/></rect>
+    <rect x="130" y="112" width="18" height="8" rx="3" fill="#e8e8f0"/>
+    <rect x="162" y="112" width="18" height="8" rx="3" fill="#e8e8f0"/>
     <text x="140" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#6a6a7a" letter-spacing="1">200-250 KCAL BURN · LOW IMPACT</text>
   </svg>`
 };
 
 // ============================================================
 // GENDERED EXERCISE FIGURES
-// Recolors the stick-figure illustrations above into a male or
-// female figure (skin tone, hair, outfit accent) based on the
+// Recolors the muscular body illustrations above into a male or
+// female figure (skin tone, outfit accent) based on the
 // signed-in user's gender, while keeping each exercise's
 // equipment and movement animation exactly as drawn in SVG{}.
 // ============================================================
 const FIGURE_PALETTE = {
-  male:  {skin:'#caa07a', outfit:'#eef0f3', hair:'#2b1f17'},
-  female:{skin:'#caa07a', outfit:'#8a5a3c', hair:'#3a2418', tie:'#f472b6', earring:'#e8c468'}
+  male:  {skin:'#c4956a', outfit:'#2d2d42', hair:'#2b1f17'},
+  female:{skin:'#c4956a', outfit:'#6b3654', hair:'#3a2418', tie:'#f472b6'}
 };
 function figureGenderFor(gender){return gender==='female'?'female':'male'}
 function headGroup(cx,cy,gender){
   const p=FIGURE_PALETTE[gender];
   if(gender==='female'){
-    return`<ellipse cx="${cx-7}" cy="${cy-2}" rx="7" ry="9" fill="${p.hair}"/>`
-      +`<path d="M${cx-6} ${cy+4} q-3 8 -1 16 q4 3 6 -1 q2 -8 0 -15Z" fill="${p.hair}"/>`
-      +`<circle cx="${cx-1}" cy="${cy+18}" r="2.5" fill="${p.tie}"/>`
-      +`<circle cx="${cx}" cy="${cy}" r="9" fill="${p.skin}"/>`
-      +`<circle cx="${cx-8}" cy="${cy+3}" r="1.6" fill="none" stroke="${p.earring}" stroke-width="1.2"/>`;
+    return`<ellipse cx="${cx-8}" cy="${cy-2}" rx="8" ry="10" fill="${p.hair}"/>`
+      +`<path d="M${cx-7} ${cy+5} q-3 9 -1 18 q4 3 6 -1 q2 -9 0 -17Z" fill="${p.hair}"/>`
+      +`<circle cx="${cx-1}" cy="${cy+20}" r="2.5" fill="${p.tie}"/>`
+      +`<circle cx="${cx}" cy="${cy}" r="12" fill="${p.skin}"/>`;
   }
-  return`<path d="M${cx-9} ${cy-1} a9 8 0 0 1 18 0 a9 4 0 0 0 -18 0Z" fill="${p.hair}"/>`
-    +`<circle cx="${cx}" cy="${cy}" r="9" fill="${p.skin}"/>`;
+  return`<path d="M${cx-12} ${cy-1} a12 10 0 0 1 24 0 a12 5 0 0 0 -24 0Z" fill="${p.hair}"/>`
+    +`<circle cx="${cx}" cy="${cy}" r="12" fill="${p.skin}"/>`;
 }
 function genderizeSVG(svg,gender){
   gender=figureGenderFor(gender);
   const p=FIGURE_PALETTE[gender];
   return svg
-    .replace(/<circle cx="([\d.]+)" cy="([\d.]+)" r="9" fill="#9a9ab0"\/>/g,(m,cx,cy)=>headGroup(+cx,+cy,gender))
-    .replace(/stroke="#d8d8f0" stroke-width="5"/g,`stroke="${p.outfit}" stroke-width="5"`)
-    .replace(/stroke="#d8d8f0" stroke-width="4"/g,`stroke="${p.skin}" stroke-width="4"`)
-    .replace(/stroke="#d8d8f0" stroke-width="3"/g,`stroke="${p.skin}" stroke-width="3"`)
-    .replace(/fill="#9a9ab0"/g,`fill="${p.skin}"`);
+    .replace(/<circle cx="([\d.]+)" cy="([\d.]+)" r="12" fill="#c4956a"\/>/g,(m,cx,cy)=>headGroup(+cx,+cy,gender))
+    .replace(/fill="#c4956a"/g,`fill="${p.skin}"`)
+    .replace(/fill="#3a3a4f"/g,`fill="${p.outfit}"`);
 }
 
 // ============================================================
@@ -2022,7 +2123,9 @@ async function logout(){
 // ============================================================
 // ROUTING & RENDER
 // ============================================================
+let _navLock=false;
 function goto(page,tab){
+  if(_navLock)return;_navLock=true;setTimeout(()=>{_navLock=false;},150);
   State.currentPage=page;if(tab)State.currentTab=tab;
   const app=document.getElementById('app');
   if(app)app.style.opacity='0';
@@ -2075,6 +2178,7 @@ function fetchPageData(page){
 function showToast(msg,type='success'){State.toast={msg,type};render();setTimeout(()=>{State.toast=null;render()},2500)}
 
 function render(){
+  try{
   const app=document.getElementById('app');
   const u=State.currentUser;
   const navPages=['home','workouts','diet','grocery','progress','cycle','profile','trainers','workout-history','ai-chat','community'];
@@ -2111,6 +2215,7 @@ function render(){
   if(State.modal)html+=State.modal;
   app.innerHTML=html;
   attachEvents();
+  }catch(e){console.error('Render error:',e);document.getElementById('app').innerHTML='<div class="page" style="text-align:center;padding:60px 20px"><h2 class="display" style="font-size:28px;color:var(--red)">Something went wrong</h2><p style="color:var(--muted2);margin:12px 0">Please refresh the app</p><button class="btn btn-primary" onclick="location.reload()">Refresh</button></div>';}
 }
 
 // ============================================================

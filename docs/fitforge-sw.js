@@ -3,8 +3,9 @@
 // Cross-origin requests (backend API, Google Fonts, Gemini, etc.) are left
 // untouched so apiCall() always hits the network directly.
 
-const CACHE_NAME = 'fitforge-v1';
+const CACHE_NAME = 'fitforge-v2';
 const APP_SHELL = [
+  'index.html',
   'fitforge_v3.html',
   'fitforge.webmanifest',
   'fitforge-icons/icon-192.png',
