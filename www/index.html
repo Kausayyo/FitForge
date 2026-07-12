@@ -531,7 +531,8 @@ async function loadData(key){
 // BACKEND SYNC — MongoDB Atlas via REST API
 // Set API_BASE to your backend URL. Falls back to local if offline.
 // ============================================================
-let API_BASE=(()=>{try{const saved=localStorage.getItem('ff_api_base');if(saved)return saved}catch(e){}return location.protocol==='file:'?'http://localhost:5001/api':'/api'})();
+const VERCEL_API='https://fitforge-app-fitforge1.vercel.app/api';
+let API_BASE=(()=>{try{const saved=localStorage.getItem('ff_api_base');if(saved)return saved}catch(e){}return(location.hostname==='localhost'||location.hostname==='127.0.0.1')?'http://localhost:5001/api':VERCEL_API})();
 function getJwt(){try{return localStorage.getItem('ff_jwt')||null}catch(e){return null}}
 function setJwt(t){try{t?localStorage.setItem('ff_jwt',t):localStorage.removeItem('ff_jwt')}catch(e){}}
 function getGeminiKey(){try{return localStorage.getItem('ff_gemini_key')||null}catch(e){return null}}
@@ -2620,7 +2621,7 @@ function renderDiet(){
     </div>`).join('')}
     ${cycleSection}
     <div class="premium-divider"><span class="lbl">Premium Nutrition</span></div>
-    ${u.isPremium?(()=>{
+    ${(()=>{
       const micro=getMicronutrients(u);
       const supps=getSupplementTimeline(u);
       const cheatCal=(macros.tdee||macros.calories+500)+500;
@@ -2704,10 +2705,7 @@ function renderDiet(){
         </div>`).join('')}
         <div class="avoid-tag" style="margin-top:8px;font-size:11px">Eat 60-90 min before bed. Avoid heavy carbs and caffeine after 6 PM.</div>
       </div>`;
-    })():['Micronutrient tracking (Vit D, B12, Iron, Zinc)','Pre/Intra/Post workout supplement timing','Cheat day calculator','Regional Indian meal swaps','Sleep-optimized late-night meals'].map(f=>`<div class="meal-card" style="opacity:.6;cursor:pointer" onclick="goto('premium')">
-      <div class="meal-time">PRO</div>
-      <div class="meal-title">${f}</div>
-    </div>`).join('')}
+    })()}
   </div>`;
 }
 
@@ -3331,50 +3329,24 @@ function renderWorkoutHistory(){
 
 function renderAIChat(){
   const msgs=State.chatMessages;
-  const hasKey=!!getGeminiKey()||!!getJwt();
   const suggestions=['How much protein do I need?','What should I eat pre-workout?','How do I lose fat without losing muscle?','Is creatine safe?','Best exercises for my body type?','How to break a weight loss plateau?'];
-  const setupGuide=`<div style="background:var(--card);border-radius:14px;padding:20px;margin:0 0 16px;border:1px solid rgba(251,191,36,.25)">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;color:var(--gold);margin-bottom:4px">Activate Real AI</div>
-        <div style="font-size:12px;color:var(--muted2);margin-bottom:16px;line-height:1.5">Get a <strong style="color:var(--text)">free</strong> Google Gemini API key to unlock personalized AI coaching that knows your body, goals, and diet.</div>
-        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px">
-          <div style="display:flex;gap:12px;align-items:flex-start">
-            <div style="min-width:28px;height:28px;background:var(--push);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;color:white;flex-shrink:0">1</div>
-            <div style="font-size:13px;line-height:1.5;color:var(--text)">Open <strong style="color:var(--gold)">aistudio.google.com</strong> in your browser and sign in with Google</div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:flex-start">
-            <div style="min-width:28px;height:28px;background:var(--push);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;color:white;flex-shrink:0">2</div>
-            <div style="font-size:13px;line-height:1.5;color:var(--text)">Click <strong>"Get API Key"</strong> in the left sidebar, then <strong>"Create API Key"</strong></div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:flex-start">
-            <div style="min-width:28px;height:28px;background:var(--push);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;color:white;flex-shrink:0">3</div>
-            <div style="font-size:13px;line-height:1.5;color:var(--text)">Copy the key (starts with <span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--card2);padding:2px 6px;border-radius:4px">AIza...</span>) and paste below</div>
-          </div>
-        </div>
-        <div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--green);line-height:1.5;display:flex;align-items:flex-start;gap:8px">
-          <span style="flex-shrink:0">✓</span>
-          <span><strong>100% free</strong> — Google gives 1,500 requests/day at no cost. No credit card needed. Your key stays on your device only.</span>
-        </div>
-        <input class="input" id="inlinGeminiKey" type="text" placeholder="Paste your API key here (AIza...)" style="font-family:'JetBrains Mono',monospace;font-size:12px;margin-bottom:10px">
-        <button class="btn btn-gold btn-full" onclick="saveInlineGeminiKey()">Activate AI Advisor</button>
-      </div>`;
   return`<div class="page fade-in" style="padding:0">
     <div style="padding:20px 16px 8px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:var(--bg)">
       <div style="width:40px;height:40px;background:var(--push);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:#fff">AI</div>
       <div style="flex:1">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase">AI Fitness Advisor</div>
-        <div style="font-size:10px;color:${hasKey?'var(--green)':'var(--gold)'};font-family:'JetBrains Mono',monospace;letter-spacing:1px">${hasKey?'● POWERED BY GEMINI AI':'○ SETUP REQUIRED'}</div>
+        <div style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;letter-spacing:1px">● POWERED BY GEMINI AI</div>
       </div>
-      ${hasKey?`<button style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;cursor:pointer;letter-spacing:.5px" onclick="State.chatMessages=[];render();">Clear</button>`:''}
+      ${msgs.length>0?`<button style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;cursor:pointer;letter-spacing:.5px" onclick="State.chatMessages=[];render();">Clear</button>`:''}
     </div>
     <div class="chat-wrap" id="chatWrap">
       ${msgs.length===0?`
-        ${!hasKey?setupGuide:`
         <div class="bubble-row">
           <div class="chat-bubble ai">
             <div class="ai-name">FITFORGE AI</div>
-            Hey ${State.currentUser?.name?.split(' ')[0]||'there'}! I'm your personal AI fitness coach powered by Gemini. I know your stats, goals, and diet preferences — ask me anything specific to your cut. I give real, evidence-based advice tailored to you.
+            Hey ${State.currentUser?.name?.split(' ')[0]||'there'}! I'm your personal AI fitness coach. I know your stats, goals, and diet — ask me anything. I give real, evidence-based advice tailored for you.
           </div>
-        </div>`}
+        </div>
         <div class="suggest-chips">
           ${suggestions.map(s=>`<div class="suggest-chip" onclick="sendSuggest('${s.replace(/'/g,'&#39;')}')">${s}</div>`).join('')}
         </div>`
@@ -3387,7 +3359,7 @@ function renderAIChat(){
         </div>`).join('')}
     </div>
     <div class="chat-input-bar">
-      <input class="chat-input" id="chatInput" placeholder="${hasKey?'Ask me anything — I know your profile…':'Ask anything about fitness…'}" onkeydown="if(event.key==='Enter')sendChat()">
+      <input class="chat-input" id="chatInput" placeholder="Ask me anything about fitness…" onkeydown="if(event.key==='Enter')sendChat()">
       <button class="chat-send" onclick="sendChat()">↑</button>
     </div>
   </div>`;
@@ -4213,30 +4185,6 @@ Rules:
 - Be conversational but information-dense. No filler.`;
 }
 
-async function callGeminiChat(messages){
-  const apiKey=getGeminiKey();
-  if(!apiKey)return null;
-  const systemPrompt=buildChatSystemPrompt();
-  const contents=[];
-  contents.push({role:'user',parts:[{text:systemPrompt+'\n\nRespond with: "Understood, I\'m ready to help." (do not repeat the profile back)'}]});
-  contents.push({role:'model',parts:[{text:'Understood, I\'m ready to help.'}]});
-  messages.forEach(m=>{
-    contents.push({role:m.role==='user'?'user':'model',parts:[{text:m.text.replace(/<[^>]*>/g,'')}]});
-  });
-  try{
-    const res=await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {method:'POST',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({contents,generationConfig:{maxOutputTokens:512,temperature:0.7}})}
-    );
-    if(!res.ok)throw new Error(`Gemini ${res.status}`);
-    const d=await res.json();
-    const text=d.candidates?.[0]?.content?.parts?.[0]?.text;
-    if(!text)throw new Error('Empty response');
-    return text;
-  }catch(e){console.warn('Gemini chat error:',e.message);return null;}
-}
-
 window.sendChat=async()=>{
   const input=document.getElementById('chatInput');
   if(!input||!input.value.trim())return;
@@ -4245,20 +4193,19 @@ window.sendChat=async()=>{
   State.chatMessages.push({role:'ai',text:'<span class="spinner"></span> Thinking…'});
   render();scrollChatDown();
   let reply=null;
-  // 1. Try backend AI
-  if(getJwt()){
-    const r=await apiCall('POST','/ai/chat',{message:text,history:State.chatMessages.slice(-10)});
+  // Always use backend AI — no user API key needed
+  const u=State.currentUser||{};
+  const userProfile={
+    name:u.name,goal:u.goal||u.fitnessGoal,weight:u.weight,height:u.height,
+    age:u.age,activity:u.activity,diet:u.diet,city:u.city,macros:u.macros
+  };
+  const cleanHistory=State.chatMessages.slice(0,-1).filter(m=>m.text&&!m.text.includes('spinner'));
+  try{
+    const r=await apiCall('POST','/ai/chat',{message:text,history:cleanHistory,userProfile});
     if(r?.reply)reply=r.reply;
-  }
-  // 2. Try direct Gemini with full conversation context
-  if(reply==null){
-    const chatHistory=State.chatMessages.slice(0,-1).filter(m=>!m.text.includes('spinner'));
-    reply=await callGeminiChat(chatHistory);
-  }
-  // 3. Last resort — canned responses
-  if(reply==null){
-    reply=fillAIVars(getAIReply(text));
-  }
+  }catch(e){console.warn('Backend AI error:',e.message);}
+  // Fallback — canned responses if backend is unreachable
+  if(reply==null) reply=fillAIVars(getAIReply(text));
   State.chatMessages[State.chatMessages.length-1]={role:'ai',text:reply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')};
   render();scrollChatDown();
 };
@@ -4325,29 +4272,18 @@ window.startGymScan=async()=>{
   const rawImages=images.map(img=>{const c=img.indexOf(',');return c>=0?img.slice(c+1):img;});
   let done=false;
 
-  // 1. Backend endpoint — Gemini key lives on server, user needs no setup
-  if(getJwt()){
-    const r=await apiCall('POST','/ai/scan-gym',{images:rawImages,mimeType:'image/jpeg'});
+  // Backend endpoint — no user API key needed, AI runs server-side
+  const u=State.currentUser||{};
+  const userProfile={name:u.name,goal:u.goal||u.fitnessGoal,age:u.age,activity:u.activity};
+  try{
+    const r=await apiCall('POST','/ai/scan-gym',{images:rawImages,mimeType:'image/jpeg',userProfile});
     if(r?.success&&r.scan){State.scanResults=buildResultsFromBackendScan(r.scan);markScanned();done=true;}
-  }
+  }catch(e){console.warn('AI scan failed:',e.message);}
 
-  // 2. Direct Gemini — only if user opted in with their own key (dev/power-user)
-  if(!done){
-    const key=getGeminiKey();
-    if(key){
-      try{
-        const data=await callGeminiScan(images,key);
-        const eq=Array.isArray(data.equipment)?data.equipment:[];
-        State.scanResults=buildResultsFromEquipment(eq,State.currentUser?.macros);
-        markScanned();done=true;
-      }catch(e){console.warn('Direct Gemini failed:',e.message);}
-    }
-  }
-
-  // 3. Demo mode fallback
+  // Demo mode fallback if backend unreachable
   if(!done){
     State.scanResults=GYM_SCAN_DEMO;markScanned();
-    if(!getJwt())showToast('Sign in to enable real AI scanning','error');
+    showToast('Using demo scan — check your internet connection','error');
   }
   setTimeout(()=>{State.scanPhase='results';State.scanTab=0;goto('gym-scan-results');},3200);
 };

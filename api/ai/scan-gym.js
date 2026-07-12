@@ -1,7 +1,13 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const connectDB = require('../_lib/db');
 const applyCors = require('../_lib/cors');
-const { requireAuthWithUser } = require('../_lib/auth');
+const rateLimit = require('../_lib/rateLimit');
+
+let getUser;
+try {
+  const auth = require('../_lib/auth');
+  const connectDB = require('../_lib/db');
+  getUser = async (req) => { await connectDB(); return auth.getUser(req); };
+} catch (_) { getUser = async () => null; }
 
 const GOAL_DESCRIPTIONS = {
   weight_loss: 'lose weight and burn fat',
@@ -58,11 +64,14 @@ module.exports = async function handler(req, res) {
   if (applyCors(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
 
-  await connectDB();
-  const user = await requireAuthWithUser(req, res);
-  if (!user) return;
+  // 3 scans per 10 minutes per IP (matches the app's 3/month intent — generous for testing)
+  if (rateLimit(req, res, { windowMs: 10 * 60_000, max: 3, message: 'Scan limit reached. Try again later.' })) return;
 
-  const { images, mimeType = 'image/jpeg' } = req.body;
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ message: 'AI service not configured on the server.' });
+  }
+
+  const { images, mimeType = 'image/jpeg', userProfile } = req.body;
 
   if (!images || !Array.isArray(images) || images.length === 0) {
     return res.status(400).json({ message: 'At least one image is required' });
@@ -71,15 +80,14 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ message: 'Maximum 4 images allowed' });
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({ message: 'AI service not configured. Please add GEMINI_API_KEY to .env' });
-  }
+  let user = null;
+  try { user = await getUser(req); } catch (_) {}
 
   const profile = {
-    fitnessGoal: user.fitnessGoal || 'general_fitness',
-    age: user.age || 25,
-    workType: user.workType || 'sedentary',
-    name: user.name?.split(' ')[0] || 'User',
+    fitnessGoal: user?.fitnessGoal || userProfile?.goal || 'general_fitness',
+    age: user?.age || userProfile?.age || 25,
+    workType: user?.workType || userProfile?.activity || 'sedentary',
+    name: user?.name?.split(' ')[0] || userProfile?.name || 'User',
   };
 
   const goalDesc = GOAL_DESCRIPTIONS[profile.fitnessGoal] || 'improve fitness';
