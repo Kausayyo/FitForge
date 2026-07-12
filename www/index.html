@@ -499,7 +499,7 @@ const State = {
   workoutSession:null,currentTrainerId:null,chatMessages:[],
   scanPhase:'intro',scanImages:[],scanResults:null,scanTab:0,scanDayIdx:0,
   workoutHistoryOpen:null,
-  generatingVideoFor:null,
+  generatingVideoFor:null,playingVideo:null,
   dietPlan:null,groceryData:null,groceryChecked:null,trainersData:null,trainersPreviewOnly:false,workoutStats:null,
   partnerData:null,partnerCycleStatus:null,
   streak:0,lastWorkoutDate:null,
@@ -592,6 +592,36 @@ async function apiCall(method,path,body,retries=1){
   }
   return null;
 }
+
+// ============================================================
+// EXERCISE VIDEO MAP  (YouTube video IDs per SVG key)
+// Tap the exercise visual → plays inline via YouTube nocookie embed
+// ============================================================
+const EXERCISE_YT = {
+  bench:    'vthMCtgVtFw', // Athlean-X bench press
+  incline:  '0G2_XV7slIg', // Incline DB press
+  ohp:      'CnBmiBqp-AI', // Overhead press
+  lateral:  '3VcKaXpzqRo', // Lateral raises
+  pushdown: '2-LAMcpzODU', // Tricep pushdown
+  cgbench:  'nEF0F9R38-w', // Close-grip bench
+  pullup:   'eGo4IYlbE5g', // Pull-ups
+  row:      'FWJR5Ve8UtE', // Barbell bent-over row
+  cablerow: 'GZbfZ033f74', // Seated cable row
+  facepull: 'rep-qVOkqgk', // Face pulls
+  curl:     'ykJmrZ5v0Oo', // Barbell curl
+  hammer:   'TwD-YGVP4Bk', // Hammer curls
+  squat:    'ultWZbUMPL8', // Barbell squat
+  rdl:      'hCDzSR6bW10', // Romanian deadlift
+  legpress: 'IZxyjW7MPJQ', // Leg press
+  lunge:    'QOVaHwm-Q6U', // Lunges
+  legcurl:  'ELOCsoDSmrg', // Leg curl
+  calfraise:'gwLzBJYoWlA', // Calf raises
+  deadlift: 'op9kVnSso6Q', // Conventional deadlift
+  dbbench:  'VmB1G1K7v94', // DB bench press
+  goblet:   'MxsFDhcyFyE', // Goblet squat
+  plank:    'ASdvN_XEl_c', // Plank
+  walk:     '4m2BFkuuCDg', // Incline treadmill walk
+};
 
 // ============================================================
 // EXERCISE SVG ILLUSTRATIONS
@@ -2555,21 +2585,22 @@ function renderExCard(ex,num,tab,locked){
   const higgsUrl=getExerciseVideos()[ex.name];
   const gifUrl=getExerciseGifs()[ex.name];
   const figGender=figureGenderFor(State.currentUser?.gender);
-  const isGenerating=State.generatingVideoFor===ex.name;
   const safeName=ex.name.replace(/'/g,'&#39;');
-  const hasMedia=higgsUrl||gifUrl;
+  const ytId=EXERCISE_YT[ex.svg]||null;
+  const isPlaying=State.playingVideo===ex.name;
   return`<div class="ex-card ${tab} ${locked?'locked':''}">
     ${locked?`<div class="premium-badge">PRO</div>`:''}
-    ${higgsUrl?`<div class="higgs-badge">✦ AI Video</div>`:''}
-    <div class="ex-visual">
-      ${higgsUrl
-        ?`<video class="ex-video" src="${higgsUrl}" autoplay loop muted playsinline></video>`
-        :gifUrl
-          ?`<img src="${gifUrl}" alt="${ex.name}" style="width:100%;height:100%;object-fit:cover">`
-          :genderizeSVG(SVG[ex.svg]||'',figGender)}
+    <div class="ex-visual" style="position:relative">
+      ${isPlaying&&ytId
+        ?`<iframe src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1" style="width:100%;height:100%;border:none" allow="autoplay;encrypted-media" allowfullscreen></iframe>`
+        :higgsUrl
+          ?`<video class="ex-video" src="${higgsUrl}" autoplay loop muted playsinline></video>`
+          :gifUrl
+            ?`<img src="${gifUrl}" alt="${ex.name}" style="width:100%;height:100%;object-fit:cover">`
+            :genderizeSVG(SVG[ex.svg]||'',figGender)}
       ${locked?`<div class="lock-overlay" onclick="goto('premium')"><div class="lock-icon">PRO</div><div class="lock-label">Unlock Premium</div></div>`:''}
-      ${!locked&&!higgsUrl?`<button class="higgs-gen-btn" onclick="generateExerciseVideo('${safeName}')" ${isGenerating?'disabled':''}>${isGenerating?'<span class="spinner"></span>Generating…':'✦ AI Video'}</button>`:''}
-      ${!locked&&higgsUrl?`<button class="higgs-clear-btn" onclick="clearExerciseVideo('${safeName}')">✕ Clear</button>`:''}
+      ${!locked&&!isPlaying&&ytId?`<button onclick="State.playingVideo='${safeName}';render()" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.75);border:none;color:white;border-radius:6px;padding:5px 10px;font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;gap:4px;backdrop-filter:blur(4px)">▶ TUTORIAL</button>`:''}
+      ${!locked&&isPlaying?`<button onclick="State.playingVideo=null;render()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.75);border:none;color:white;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>`:''}
     </div>
     <div class="ex-info">
       <div class="ex-num">EXERCISE 0${num}</div>
@@ -3710,28 +3741,27 @@ window.applyPromo=()=>{
 // backend is offline, the trial was already used, or RAZORPAY_KEY_ID/SECRET
 // in the backend .env are still placeholders (create-order returns null/no real key).
 window.startPremiumCheckout=async(amt)=>{
-  if(getJwt()){
-    const order=await apiCall('POST','/payments/create-order',{planType:'trial'});
-    const realKey=order?.keyId&&order.keyId.startsWith('rzp_')&&!order.keyId.toUpperCase().includes('PLACEHOLDER');
-    if(order&&realKey&&typeof Razorpay!=='undefined'){
-      const rzp=new Razorpay({
-        key:order.keyId,order_id:order.orderId,amount:order.amount,currency:order.currency,
-        name:'FitForge',description:order.description,
-        prefill:{name:order.userName,email:order.userEmail},
-        theme:{color:'#fbbf24'},
-        handler:async(resp)=>{
-          await apiCall('POST','/payments/verify',{
-            razorpayOrderId:resp.razorpay_order_id,
-            razorpayPaymentId:resp.razorpay_payment_id,
-            razorpaySignature:resp.razorpay_signature
-          });
-          await finishPremiumUpgrade();
-        }
-      });
-      rzp.open();
-      return;
-    }
+  const order=await apiCall('POST','/payments/create-order',{planType:'monthly'});
+  // Real Razorpay — backend has RAZORPAY_KEY_ID set
+  if(order&&!order.simulated&&order.keyId&&typeof Razorpay!=='undefined'){
+    const rzp=new Razorpay({
+      key:order.keyId,order_id:order.orderId,amount:order.amount,currency:order.currency||'INR',
+      name:'FitForge',description:order.description||'FitForge Premium',
+      prefill:{name:order.userName||State.currentUser?.name||'',email:order.userEmail||State.currentUser?.email||''},
+      theme:{color:'#e85c3a'},
+      handler:async(resp)=>{
+        await apiCall('POST','/payments/verify',{
+          razorpayOrderId:resp.razorpay_order_id,
+          razorpayPaymentId:resp.razorpay_payment_id,
+          razorpaySignature:resp.razorpay_signature
+        });
+        await finishPremiumUpgrade();
+      }
+    });
+    rzp.open();
+    return;
   }
+  // Simulated checkout (no Razorpay keys yet)
   openRazorpay(amt);
 };
 

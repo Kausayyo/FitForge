@@ -236,13 +236,71 @@ function handleExercises(req, res) {
   res.json({ message: 'Exercise data is bundled in the app for offline use.' });
 }
 
-function handlePaymentsCreateOrder(req, res) {
+async function handlePaymentsCreateOrder(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
-  // Razorpay integration — add RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET to Vercel env vars
-  if (!process.env.RAZORPAY_KEY_ID) {
-    return res.status(503).json({ message: 'Payments not configured yet. Coming soon!' });
+
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!keyId || !keySecret) {
+    // No Razorpay keys — tell frontend to use simulated checkout
+    return res.json({ simulated: true, keyId: null, orderId: null });
   }
-  res.json({ message: 'Order created', orderId: `order_demo_${Date.now()}` });
+
+  const user = await getUser(req);
+  const { planType = 'monthly' } = req.body || {};
+  const amountMap = { trial: 100, monthly: 49900, yearly: 299900 }; // paise
+  const amount = amountMap[planType] || 49900;
+
+  try {
+    const crypto = require('crypto');
+    const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+    const receipt = `ff_${Date.now()}`;
+    const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Basic ${auth}` },
+      body: JSON.stringify({ amount, currency: 'INR', receipt }),
+    });
+    if (!rzpRes.ok) throw new Error(`Razorpay ${rzpRes.status}`);
+    const order = await rzpRes.json();
+    res.json({
+      orderId: order.id, keyId, amount: order.amount, currency: order.currency,
+      description: planType === 'trial' ? '7-day Free Trial' : 'FitForge Premium',
+      userName: user?.name || '', userEmail: user?.email || '',
+    });
+  } catch (err) {
+    console.error('Razorpay order error:', err.message);
+    res.status(500).json({ message: 'Payment order failed. Please try again.' });
+  }
+}
+
+async function handlePaymentsVerify(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
+  const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body || {};
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keySecret) return res.json({ verified: true }); // simulated
+
+  const crypto = require('crypto');
+  const expected = crypto.createHmac('sha256', keySecret)
+    .update(`${razorpayOrderId}|${razorpayPaymentId}`).digest('hex');
+
+  if (expected !== razorpaySignature) return res.status(400).json({ message: 'Payment verification failed.' });
+
+  // Mark user as premium
+  const user = await getUser(req);
+  if (user && _User) {
+    const exp = new Date();
+    exp.setMonth(exp.getMonth() + 1);
+    await _User.findByIdAndUpdate(user._id, { isPremium: true, premiumExpiresAt: exp });
+  }
+  res.json({ verified: true, message: 'Payment successful! Welcome to Premium.' });
+}
+
+async function handlePaymentsStatus(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
+  const user = await getUser(req);
+  if (!user) return res.json({ isPremium: false });
+  res.json({ isPremium: user.isPremium || false, premiumExpiresAt: user.premiumExpiresAt || null });
 }
 
 // ── Main router ───────────────────────────────────────────────────────────────
@@ -264,7 +322,9 @@ module.exports = async function handler(req, res) {
     if (path === '/ai/scan-gym') return await handleAIScanGym(req, res);
     if (path === '/diet/plan') return handleDietPlan(req, res);
     if (path === '/exercises' || path === '/exercises/') return handleExercises(req, res);
-    if (path === '/payments/create-order') return handlePaymentsCreateOrder(req, res);
+    if (path === '/payments/create-order') return await handlePaymentsCreateOrder(req, res);
+    if (path === '/payments/verify') return await handlePaymentsVerify(req, res);
+    if (path === '/payments/status') return await handlePaymentsStatus(req, res);
     if (path === '/health' || path === '') return res.json({ status: 'ok', version: '1.0.0', timestamp: new Date().toISOString() });
 
     res.status(404).json({ message: `API route ${path} not found` });
