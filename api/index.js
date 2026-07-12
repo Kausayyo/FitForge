@@ -181,7 +181,7 @@ async function handleAIChat(req, res) {
   try {
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite', systemInstruction: systemPrompt });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', systemInstruction: systemPrompt });
     const result = await model.generateContent({ contents });
     res.json({ reply: result.response.text().trim() });
   } catch (err) {
